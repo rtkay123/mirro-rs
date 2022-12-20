@@ -88,11 +88,11 @@ fn draw_table(mirrors: Option<&ArchLinux>) -> Table {
                     item_name = "other".to_string()
                 }
                 let index = format!("{idx}.");
-                let row: Vec<_> = [index, item_name, f.mirrors.len().to_string()]
-                    .iter()
-                    .map(|c| Cell::from(c.clone()).style(Style::default().fg(Color::Blue)))
-                    .collect();
-                return Row::new(row.into_iter());
+                return Row::new(
+                    [index, item_name, f.mirrors.len().to_string()]
+                        .iter()
+                        .map(|c| Cell::from(c.clone()).style(Style::default().fg(Color::Blue))),
+                );
             })
             .collect()
     } else {
