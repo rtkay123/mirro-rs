@@ -213,7 +213,13 @@ fn draw_logs<'a>() -> TuiLoggerWidget<'a> {
 }
 
 fn draw_filter(app: &App) -> Paragraph {
-    Paragraph::new(app.input.as_ref()).block(Block::default().borders(Borders::ALL).title("Input"))
+    Paragraph::new(app.input.as_ref()).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .border_style(Style::default().fg(Color::Black))
+            .title(title("Filter")),
+    )
 }
 
 fn title(text: impl AsRef<str>) -> Spans<'static> {
