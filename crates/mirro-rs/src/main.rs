@@ -1,6 +1,7 @@
+mod tui;
+
 #[tokio::main]
 async fn main() {
-    let res = archlinux::archlinux().await.unwrap();
-    println!("{res:#?}");
-    println!("Hello, world!");
+    let _ = tui::start();
+    //    let res = archlinux::archlinux().await.unwrap();
 }
