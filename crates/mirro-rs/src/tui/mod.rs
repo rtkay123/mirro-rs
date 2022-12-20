@@ -7,13 +7,14 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::io;
+use std::{io, sync::Arc};
+use tokio::sync::Mutex;
 
 use tui::{backend::CrosstermBackend, Terminal};
 
 use self::{state::App, ui::ui};
 
-pub fn start() -> Result<()> {
+pub async fn start() -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
 
@@ -22,8 +23,16 @@ pub fn start() -> Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let app = App::default();
-    let res = run_app(&mut terminal, app);
+    let app = App::new();
+    let app = Arc::new(Mutex::new(app));
+    let inner = Arc::clone(&app);
+    tokio::spawn(async move {
+        println!("going");
+        let mut app = inner.lock().await;
+        let x = app.initialise().await;
+    });
+
+    let res = run_app(&mut terminal, Arc::clone(&app)).await;
 
     disable_raw_mode()?;
     execute!(
@@ -40,14 +49,21 @@ pub fn start() -> Result<()> {
     Ok(())
 }
 
-fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, mut app: App) -> io::Result<()> {
+async fn run_app(
+    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    app: Arc<Mutex<App>>,
+) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        let guard = app.lock().await;
+        terminal.draw(|f| ui(f, &guard))?;
 
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
-                KeyCode::Char('p') => app.show_popup = !app.show_popup,
+                KeyCode::Char('p') => {
+                    let mut app = app.lock().await;
+                    app.show_popup = !app.show_popup
+                }
                 _ => {}
             }
         }

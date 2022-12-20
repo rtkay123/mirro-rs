@@ -1,7 +1,7 @@
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame,
@@ -33,7 +33,10 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
     // More content here
 
     if app.show_popup {
-        let block = Block::default().title("Mirrors").borders(Borders::ALL);
+        let block = Block::default()
+            .title("Mirrors")
+            .borders(Borders::ALL)
+            .style(Style::default().bg(Color::Black));
         let area = centered_rect(60, 20, area);
         f.render_widget(Clear, area);
         f.render_widget(block, area);
