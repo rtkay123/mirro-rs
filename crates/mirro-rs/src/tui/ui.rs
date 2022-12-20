@@ -1,4 +1,3 @@
-use archlinux::ArchLinux;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -56,7 +55,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
     }
 
     {
-        let table = draw_table(app.mirrors.as_ref());
+        let table = draw_table(app);
         f.render_widget(table, body_chunks[0]);
     }
 
@@ -73,26 +72,30 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
     }
 }
 
-fn draw_table(mirrors: Option<&ArchLinux>) -> Table {
+fn draw_table(app: &App) -> Table {
     let header_cells = ["index", "country:", "mirrors:"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
-    let items: Vec<_> = if let Some(items) = mirrors {
+    let items: Vec<_> = if let Some(items) = app.mirrors.as_ref() {
         items
             .countries
             .iter()
             .enumerate()
-            .map(|(idx, f)| {
-                let mut item_name = format!("{}| {}", f.code, f.name);
-                if item_name.is_empty() {
-                    item_name = "other".to_string()
+            .filter_map(|(idx, f)| {
+                if f.name
+                    .to_ascii_lowercase()
+                    .contains(&app.input.to_ascii_lowercase())
+                {
+                    let item_name = format!("{}| {}", f.code, f.name);
+                    let index = format!("{idx}.");
+                    return Some(Row::new(
+                        [index, item_name, f.mirrors.len().to_string()]
+                            .iter()
+                            .map(|c| Cell::from(c.clone()).style(Style::default().fg(Color::Blue))),
+                    ));
+                } else {
+                    None
                 }
-                let index = format!("{idx}.");
-                return Row::new(
-                    [index, item_name, f.mirrors.len().to_string()]
-                        .iter()
-                        .map(|c| Cell::from(c.clone()).style(Style::default().fg(Color::Blue))),
-                );
             })
             .collect()
     } else {
