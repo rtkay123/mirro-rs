@@ -20,8 +20,17 @@ impl IoAsyncHandler {
     #[cfg(feature = "archlinux")]
     pub async fn initialise(&mut self) -> Result<()> {
         use anyhow::bail;
+        use log::info;
         match archlinux::archlinux().await {
             Ok(mirrors) => {
+                let mut count = 0;
+                for i in mirrors.countries.iter() {
+                    count += i.mirrors.len();
+                }
+                info!(
+                    "Found {count} mirrors from {} countries.",
+                    mirrors.countries.len()
+                );
                 let mut app = self.app.lock().await;
                 app.mirrors = Some(mirrors);
             }

@@ -466,6 +466,7 @@ dependencies = [
  "log",
  "tokio",
  "tui",
+ "tui-input",
  "tui-logger",
 ]
 
@@ -914,6 +915,16 @@ dependencies = [
  "cassowary",
  "crossterm",
  "unicode-segmentation",
+ "unicode-width",
+]
+
+[[package]]
+name = "tui-input"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6a207b3c48d2affc4a9645068b83512eebf3b586214af2a9784b6e7ec5aa41b"
+dependencies = [
+ "crossterm",
  "unicode-width",
 ]
 

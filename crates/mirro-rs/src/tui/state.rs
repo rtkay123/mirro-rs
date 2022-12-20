@@ -19,6 +19,7 @@ pub struct App {
     #[cfg(feature = "archlinux")]
     pub mirrors: Option<ArchLinux>,
     pub io_tx: tokio::sync::mpsc::Sender<IoEvent>,
+    pub input: String,
 }
 
 impl App {
@@ -29,6 +30,7 @@ impl App {
             show_popup: true,
             mirrors: None,
             io_tx,
+            input: String::default(),
         }
     }
 

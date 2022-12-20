@@ -11,6 +11,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use log::{debug, info, LevelFilter};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
@@ -32,13 +33,16 @@ pub async fn start() -> Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     let (sync_io_tx, mut sync_io_rx) = tokio::sync::mpsc::channel::<IoEvent>(100);
-    let app = App::new(sync_io_tx);
-    let app = Arc::new(Mutex::new(app));
+    let app = Arc::new(Mutex::new(App::new(sync_io_tx)));
     let inner = Arc::clone(&app);
+
+    tui_logger::init_logger(LevelFilter::Trace).unwrap();
+    tui_logger::set_default_level(log::LevelFilter::Debug);
 
     tokio::spawn(async move {
         let mut handler = IoAsyncHandler::new(inner);
         while let Some(io_event) = sync_io_rx.recv().await {
+            debug!("Getting Arch Linux mirrors. Please wait");
             handler.handle_io_event(io_event).await;
         }
     });
