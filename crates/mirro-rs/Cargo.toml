@@ -8,3 +8,4 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 archlinux = { version = "0.1.0", path = "../archlinux" }
+tokio = { version = "1.23.0", features = ["rt-multi-thread", "macros"] }
