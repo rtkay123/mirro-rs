@@ -42,24 +42,24 @@ impl App {
     pub async fn dispatch_action(&mut self, key: Key) -> AppReturn {
         if let Some(action) = self.actions.find(key) {
             debug!("action: [{action:?}]");
-            match action {
-                Action::ClosePopUp => {
-                    self.show_popup = !self.show_popup;
-                    AppReturn::Continue
-                }
-                Action::Quit => {
-                    if key == Key::Char('q') && self.show_input {
+            if key.is_exit() && !self.show_input {
+                AppReturn::Exit
+            } else {
+                match action {
+                    Action::ClosePopUp => {
+                        self.show_popup = !self.show_popup;
+                        AppReturn::Continue
+                    }
+                    Action::Quit => {
                         self.input.insert(self.input_cursor_position, 'q');
                         self.input_cursor_position += 1;
                         AppReturn::Continue
-                    } else {
-                        AppReturn::Exit
                     }
-                }
-                Action::ShowInput => {
-                    // replace log widget
-                    self.show_input = !self.show_input;
-                    AppReturn::Continue
+                    Action::ShowInput => {
+                        // replace log widget
+                        self.show_input = !self.show_input;
+                        AppReturn::Continue
+                    }
                 }
             }
         } else {
