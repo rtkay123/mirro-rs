@@ -41,7 +41,7 @@ impl IoAsyncHandler {
 
     pub async fn handle_io_event(&mut self, io_event: IoEvent) {
         if let Err(e) = match io_event {
-            IoEvent::Initialize => self.initialise().await,
+            IoEvent::Initialise => self.initialise().await,
         } {
             error!("{e}");
         }

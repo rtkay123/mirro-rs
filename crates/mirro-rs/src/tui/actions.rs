@@ -6,11 +6,12 @@ use super::inputs::key::Key;
 pub enum Action {
     ClosePopUp,
     Quit,
+    ShowInput,
 }
 
 impl Action {
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 2] = [Action::Quit, Action::ClosePopUp];
+        static ACTIONS: [Action; 3] = [Action::Quit, Action::ClosePopUp, Action::ShowInput];
         ACTIONS.iter()
     }
 
@@ -18,6 +19,7 @@ impl Action {
         match self {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
             Action::ClosePopUp => &[Key::Char('p')],
+            Action::ShowInput => &[Key::Ctrl('f'), Key::Char('/')],
         }
     }
 }
@@ -27,6 +29,7 @@ impl Display for Action {
         let str = match self {
             Action::ClosePopUp => "close popup",
             Action::Quit => "quit",
+            Action::ShowInput => "toggle filter",
         };
         write!(f, "{str}")
     }
@@ -79,7 +82,7 @@ impl From<Vec<Action>> for Actions {
                     .map(Action::to_string)
                     .collect::<Vec<_>>()
                     .join(", ");
-                format!("Conflict key {} with actions {}", key, actions)
+                format!("Conflict key {key} with actions {actions}")
             })
             .collect::<Vec<_>>();
         if !errors.is_empty() {

@@ -468,6 +468,7 @@ dependencies = [
  "tui",
  "tui-input",
  "tui-logger",
+ "unicode-width",
 ]
 
 [[package]]

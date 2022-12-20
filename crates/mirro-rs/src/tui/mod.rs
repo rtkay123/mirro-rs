@@ -11,7 +11,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use log::{debug, info, LevelFilter};
+use log::{debug, LevelFilter};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
@@ -71,11 +71,11 @@ async fn run_app(
     let tick_rate = Duration::from_millis(100);
     let mut events = Events::new(tick_rate);
 
-    // Trigger state change from Init to Initialized
+    // Trigger state change from Init to Initialised
     {
         let mut app = app.lock().await;
         // Here we assume the the first load is a long task
-        app.dispatch(IoEvent::Initialize).await;
+        app.dispatch(IoEvent::Initialise).await;
     }
 
     loop {
