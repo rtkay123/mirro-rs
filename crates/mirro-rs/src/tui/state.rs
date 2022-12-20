@@ -49,6 +49,8 @@ impl App {
                 }
                 Action::Quit => {
                     if key == Key::Char('q') && self.show_input {
+                        self.input.insert(self.input_cursor_position, 'q');
+                        self.input_cursor_position += 1;
                         AppReturn::Continue
                     } else {
                         AppReturn::Exit
@@ -101,6 +103,9 @@ impl App {
                         self.input.insert(self.input_cursor_position, e);
                         self.input_cursor_position += 1;
                     }
+                    Key::Esc => {
+                        self.show_input = false;
+                    }
                     _ => {
                         warn!("No action associated to {key}");
                     }
@@ -125,7 +130,7 @@ impl App {
     }
 
     pub fn ready(&mut self) {
-        self.actions = vec![Action::Quit, Action::ShowInput, Action::ClosePopUp].into();
+        self.actions = vec![Action::ShowInput, Action::ClosePopUp, Action::Quit].into();
         self.show_popup = false;
     }
 }

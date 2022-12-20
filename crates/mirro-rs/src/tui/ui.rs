@@ -7,7 +7,6 @@ use tui::{
     Frame,
 };
 use tui_logger::TuiLoggerWidget;
-use unicode_width::UnicodeWidthStr;
 
 use super::{actions::Actions, state::App};
 
@@ -19,8 +18,8 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
         .constraints(
             [
                 Constraint::Length(3),
-                Constraint::Min(20),
                 Constraint::Min(12),
+                Constraint::Min(20),
                 Constraint::Length(3),
             ]
             .as_ref(),
@@ -30,7 +29,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
     // Body & Help
     let body_chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(20), Constraint::Length(32)].as_ref())
+        .constraints([Constraint::Min(20), Constraint::Length(40)].as_ref())
         .split(chunks[1]);
 
     let help = draw_help(&app.actions);
