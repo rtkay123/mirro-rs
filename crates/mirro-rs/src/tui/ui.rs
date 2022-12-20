@@ -2,7 +2,7 @@ use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::Span,
+    text::{Span, Spans},
     widgets::{Block, BorderType, Borders, Cell, Clear, Paragraph, Row, Table},
     Frame,
 };
@@ -15,38 +15,43 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
     check_size(&area);
 
     let chunks = Layout::default()
-        .constraints(
-            [
-                Constraint::Length(3),
-                Constraint::Min(12),
-                Constraint::Min(20),
-                Constraint::Length(3),
-            ]
-            .as_ref(),
-        )
+        .constraints([Constraint::Min(20), Constraint::Length(3)].as_ref())
         .split(area);
 
-    // Body & Help
     let body_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Min(20), Constraint::Length(40)].as_ref())
-        .split(chunks[1]);
+        .split(chunks[0]);
+    {
+        // Body & Help
+        let sidebar = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)].as_ref())
+            .split(body_chunks[1]);
 
-    let help = draw_help(&app.actions);
-    f.render_widget(help, body_chunks[1]);
+        let help = draw_help(&app.actions);
+        f.render_widget(help, sidebar[1]);
 
-    match app.show_input {
-        true => {
-            f.render_widget(draw_filter(app), chunks[3]);
-            f.set_cursor(
-                // Put cursor past the end of the input text
-                chunks[3].x + app.input_cursor_position as u16 + 1,
-                // Move one line down, from the border to the input line
-                chunks[3].y + 1,
-            )
-        }
-        false => f.render_widget(draw_logs(), chunks[3]),
-    };
+        let selection = Block::default()
+            .title(title("Selection"))
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Black))
+            .border_type(BorderType::Rounded);
+        f.render_widget(selection, sidebar[0]);
+
+        match app.show_input {
+            true => {
+                f.render_widget(draw_filter(app), chunks[1]);
+                f.set_cursor(
+                    // Put cursor past the end of the input text
+                    chunks[1].x + app.input_cursor_position as u16 + 1,
+                    // Move one line down, from the border to the input line
+                    chunks[1].y + 1,
+                )
+            }
+            false => f.render_widget(draw_logs(), chunks[1]),
+        };
+    }
     // More content here
 
     if app.show_popup {
@@ -89,8 +94,8 @@ fn draw_help(actions: &Actions) -> Table {
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(BorderType::Rounded)
-                .title(" Help ")
-                .style(Style::default().add_modifier(Modifier::BOLD)),
+                .border_style(Style::default().fg(Color::Black))
+                .title(title("Help")),
         )
         .widths(&[Constraint::Length(11), Constraint::Min(20)])
         .column_spacing(1)
@@ -138,9 +143,24 @@ fn draw_logs<'a>() -> TuiLoggerWidget<'a> {
         .style_warn(Style::default().fg(Color::Yellow))
         .style_trace(Style::default().fg(Color::Gray))
         .style_info(Style::default().fg(Color::Blue))
-        .block(Block::default().title("Logs").borders(Borders::ALL))
+        .block(
+            Block::default()
+                .title(title("Logs"))
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Black))
+                .border_type(BorderType::Rounded),
+        )
 }
 
 fn draw_filter(app: &App) -> Paragraph {
     Paragraph::new(app.input.as_ref()).block(Block::default().borders(Borders::ALL).title("Input"))
+}
+
+fn title(text: &str) -> Spans {
+    Spans::from(vec![Span::styled(
+        format!(" {text} "),
+        Style::default()
+            .fg(Color::White)
+            .add_modifier(Modifier::BOLD),
+    )])
 }
