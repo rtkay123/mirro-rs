@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
+name = "archlinux"
+version = "0.1.0"
+
+[[package]]
 name = "mirro-rs"
 version = "0.1.0"
+dependencies = [
+ "archlinux",
+]
