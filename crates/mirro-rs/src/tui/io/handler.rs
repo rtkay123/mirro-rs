@@ -34,7 +34,18 @@ impl IoAsyncHandler {
                 let mut app = self.app.lock().await;
                 app.mirrors = Some(mirrors);
             }
-            Err(e) => bail!("{e}"),
+            Err(e) => {
+                error!("{e}, trying fallback");
+                match archlinux::archlinux_fallback() {
+                    Ok(mirrors) => {
+                        let mut app = self.app.lock().await;
+                        app.mirrors = Some(mirrors);
+                    }
+                    Err(e) => {
+                        bail!("{e}")
+                    }
+                }
+            }
         }
         Ok(())
     }

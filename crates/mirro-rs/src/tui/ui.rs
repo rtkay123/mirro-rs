@@ -1,3 +1,4 @@
+use archlinux::ArchLinux;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -22,6 +23,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
         .direction(Direction::Horizontal)
         .constraints([Constraint::Min(20), Constraint::Length(40)].as_ref())
         .split(chunks[0]);
+
     {
         // Body & Help
         let sidebar = Layout::default()
@@ -52,7 +54,11 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
             false => f.render_widget(draw_logs(), chunks[1]),
         };
     }
-    // More content here
+
+    {
+        let table = draw_table(app.mirrors.as_ref());
+        f.render_widget(table, body_chunks[0]);
+    }
 
     if app.show_popup {
         let block = Block::default()
@@ -65,6 +71,55 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
         f.render_widget(Clear, area);
         f.render_widget(p, area);
     }
+}
+
+fn draw_table(mirrors: Option<&ArchLinux>) -> Table {
+    let header_cells = ["index", "country:", "mirrors:"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default()));
+    let items: Vec<_> = if let Some(items) = mirrors {
+        items
+            .countries
+            .iter()
+            .enumerate()
+            .map(|(idx, f)| {
+                let mut item_name = format!("{}| {}", f.code, f.name);
+                if item_name.is_empty() {
+                    item_name = "other".to_string()
+                }
+                let index = format!("{idx}.");
+                let row: Vec<_> = [index, item_name, f.mirrors.len().to_string()]
+                    .iter()
+                    .map(|c| Cell::from(c.clone()).style(Style::default().fg(Color::Blue)))
+                    .collect();
+                return Row::new(row.into_iter());
+            })
+            .collect()
+    } else {
+        vec![]
+    };
+
+    let count = items.len();
+    let val = format!("Results from ({count}) countries");
+    let header = Row::new(header_cells).height(1);
+
+    let t = Table::new(items)
+        .header(header)
+        .block(
+            Block::default()
+                .title(title(val))
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(Color::Black)),
+        )
+        .highlight_symbol(">>")
+        .widths(&[
+            Constraint::Percentage(4),
+            Constraint::Length(30),
+            Constraint::Min(10),
+        ]);
+
+    t
 }
 
 fn draw_help(actions: &Actions) -> Table {
@@ -156,9 +211,9 @@ fn draw_filter(app: &App) -> Paragraph {
     Paragraph::new(app.input.as_ref()).block(Block::default().borders(Borders::ALL).title("Input"))
 }
 
-fn title(text: &str) -> Spans {
+fn title(text: impl AsRef<str>) -> Spans<'static> {
     Spans::from(vec![Span::styled(
-        format!(" {text} "),
+        format!(" {} ", text.as_ref()),
         Style::default()
             .fg(Color::White)
             .add_modifier(Modifier::BOLD),
