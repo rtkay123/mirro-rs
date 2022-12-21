@@ -55,31 +55,44 @@ impl App {
     pub async fn dispatch_action(&mut self, key: Key) -> AppReturn {
         if let Some(action) = self.actions.find(key) {
             //debug!("action: [{action:?}]");
-            if key.is_exit() && !self.show_input {
+            if key.is_exit() {
                 AppReturn::Exit
+            } else if self.show_input {
+                match action {
+                    Action::Quit => {
+                        if key == Key::Char('q') {
+                            insert_character(self, 'q');
+                        }
+                    }
+                    Action::NavigateUp => {
+                        if key == Key::Char('k') {
+                            insert_character(self, 'k');
+                        }
+                    }
+                    Action::NavigateDown => {
+                        if key == Key::Char('j') {
+                            insert_character(self, 'j');
+                        }
+                    }
+                    _ => {}
+                }
+                AppReturn::Continue
             } else {
                 match action {
                     Action::ClosePopUp => {
-                        if !self.show_input {
-                            self.show_popup = !self.show_popup;
-                        } else {
-                            insert_character(self, 'p');
-                        }
+                        self.show_popup = !self.show_popup;
                         AppReturn::Continue
                     }
-                    Action::Quit => {
-                        insert_character(self, 'q');
-                        AppReturn::Continue
-                    }
+                    Action::Quit => AppReturn::Continue,
                     Action::ShowInput => {
                         self.show_input = !self.show_input;
                         AppReturn::Continue
                     }
-                    Action::NavigateDown => {
+                    Action::NavigateUp => {
                         self.previous();
                         AppReturn::Continue
                     }
-                    Action::NavigateUp => {
+                    Action::NavigateDown => {
                         self.next();
                         AppReturn::Continue
                     }
@@ -160,8 +173,8 @@ impl App {
             Action::ShowInput,
             Action::ClosePopUp,
             Action::Quit,
-            Action::NavigateUp,
             Action::NavigateDown,
+            Action::NavigateUp,
             Action::FilterHttp,
             Action::FilterHttps,
             Action::FilterRsync,
