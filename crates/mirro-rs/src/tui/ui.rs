@@ -232,22 +232,50 @@ fn draw_selection<'a>() -> Block<'a> {
 }
 
 fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
-    let filters: Vec<_> = app
-        .active_filter
+    let count = app.active_sort.len() + app.active_filter.len();
+    let mut sorts: Vec<_> = app
+        .active_sort
         .iter()
-        .map(|f| {
-            Spans::from(vec![
+        .enumerate()
+        .flat_map(|(idx, f)| {
+            let mut ret = vec![
                 Span::raw(format!(" [{f}]")),
                 Span::styled(" ⇣", Style::default()),
-                Span::styled(" 🢒", Style::default().fg(Color::Black)),
-            ])
+            ];
+            if idx < count - 1 {
+                ret.push(Span::styled(" 🢒", Style::default().fg(Color::Black)))
+            }
+            ret
         })
         .collect();
 
-    let count = filters.len();
+    let count = app.active_filter.len();
+
+    let mut filters: Vec<_> = app
+        .active_filter
+        .iter()
+        .enumerate()
+        .flat_map(|(idx, f)| {
+            let mut ret = vec![Span::styled(
+                format!(" {f}"),
+                Style::default()
+                    .fg(Color::Blue)
+                    .add_modifier(Modifier::BOLD),
+            )];
+            if idx < count - 1 {
+                ret.push(Span::styled(" 🢒", Style::default().fg(Color::Black)))
+            }
+            ret
+        })
+        .collect();
+
+    sorts.append(&mut filters);
+
+    let widget = Spans::from(sorts);
+
     let bt = format!("Sort ({count})");
 
-    Paragraph::new(filters).block(create_block(bt))
+    Paragraph::new(widget).block(create_block(bt))
 }
 
 fn create_block<'a>(title: impl Into<String>) -> Block<'a> {

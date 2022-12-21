@@ -104,11 +104,11 @@ impl Key {
 impl Display for Key {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
-            Key::Alt(' ') => write!(f, "Alt+Space"),
-            Key::Ctrl(' ') => write!(f, "Ctrl+Space"),
-            Key::Char(' ') => write!(f, "Space"),
-            Key::Alt(c) => write!(f, "Alt+{c}"),
-            Key::Ctrl(c) => write!(f, "Ctrl+{c}"),
+            Key::Alt(' ') => write!(f, "alt+Space"),
+            Key::Ctrl(' ') => write!(f, "ctrl+Space"),
+            Key::Char(' ') => write!(f, "space"),
+            Key::Alt(c) => write!(f, "alt+{c}"),
+            Key::Ctrl(c) => write!(f, "ctrl+{c}"),
             Key::Char(c) => write!(f, "{c}"),
             _ => write!(f, "{self:?}"),
         }

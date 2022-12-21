@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 #[cfg(feature = "archlinux")]
 use archlinux::ArchLinux;
 
@@ -9,27 +7,17 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::tui::actions::Action;
 
-use super::{actions::Actions, inputs::key::Key, io::IoEvent};
+use super::{
+    actions::Actions,
+    dispatch::{filter::Filter, sort::Sort},
+    inputs::key::Key,
+    io::IoEvent,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AppReturn {
     Exit,
     Continue,
-}
-
-pub enum Filter {
-    Alphabetical,
-    Mirror,
-}
-
-impl Display for Filter {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            Filter::Alphabetical => "a",
-            Filter::Mirror => "c",
-        };
-        write!(f, "{str}")
-    }
 }
 
 pub struct App {
@@ -41,8 +29,9 @@ pub struct App {
     pub input: String,
     pub input_cursor_position: usize,
     pub show_input: bool,
-    pub active_filter: Vec<Filter>,
+    pub active_sort: Vec<Sort>,
     pub table_state: TableState,
+    pub active_filter: Vec<Filter>,
 }
 
 impl App {
@@ -56,8 +45,9 @@ impl App {
             io_tx,
             input: String::default(),
             input_cursor_position: 0,
-            active_filter: vec![Filter::Alphabetical, Filter::Mirror],
+            active_sort: vec![Sort::Alphabetical, Sort::MirrorCount],
             table_state: TableState::default(),
+            active_filter: vec![],
         }
     }
 
@@ -93,9 +83,10 @@ impl App {
                         self.next();
                         AppReturn::Continue
                     }
-                    Action::FilterHttps => todo!(),
-                    Action::FilterHttp => todo!(),
-                    Action::FilterRsync => todo!(),
+                    Action::FilterHttps => insert_filter(self, Filter::Https),
+                    Action::FilterHttp => insert_filter(self, Filter::Http),
+                    Action::FilterRsync => insert_filter(self, Filter::Rsync),
+                    Action::FilterSyncing => insert_filter(self, Filter::InSync),
                 }
             }
         } else {
@@ -171,6 +162,10 @@ impl App {
             Action::Quit,
             Action::NavigateUp,
             Action::NavigateDown,
+            Action::FilterHttp,
+            Action::FilterHttps,
+            Action::FilterRsync,
+            Action::FilterSyncing,
         ]
         .into();
         self.table_state.select(Some(0));
@@ -213,4 +208,13 @@ impl App {
 fn insert_character(app: &mut App, key: char) {
     app.input.insert(app.input_cursor_position, key);
     app.input_cursor_position += 1;
+}
+
+fn insert_filter(app: &mut App, filter: Filter) -> AppReturn {
+    if let Some(idx) = app.active_filter.iter().position(|f| *f == filter) {
+        app.active_filter.remove(idx);
+    } else {
+        app.active_filter.push(filter);
+    }
+    AppReturn::Continue
 }

@@ -1,4 +1,5 @@
 mod actions;
+mod dispatch;
 mod inputs;
 mod io;
 mod state;
