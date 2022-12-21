@@ -33,12 +33,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
         let help = draw_help(&app.actions);
         f.render_widget(help, sidebar[1]);
 
-        let selection = Block::default()
-            .title(title("Selection"))
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Black))
-            .border_type(BorderType::Rounded);
-        f.render_widget(selection, sidebar[0]);
+        f.render_widget(draw_selection(), sidebar[0]);
 
         match app.show_input {
             true => {
@@ -55,8 +50,15 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
     }
 
     {
+        let content_bar = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(3), Constraint::Min(20)].as_ref())
+            .split(body_chunks[0]);
+
+        f.render_widget(draw_sort(app), content_bar[0]);
+
         let table = draw_table(app);
-        f.render_widget(table, body_chunks[0]);
+        f.render_widget(table, content_bar[1]);
     }
 
     if app.show_popup {
@@ -103,18 +105,11 @@ fn draw_table(app: &App) -> Table {
     };
 
     let count = items.len();
-    let val = format!("Results from ({count}) countries");
     let header = Row::new(header_cells).height(1);
 
     let t = Table::new(items)
         .header(header)
-        .block(
-            Block::default()
-                .title(title(val))
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(Style::default().fg(Color::Black)),
-        )
+        .block(create_block(format!("Results from ({count}) countries")))
         .highlight_symbol(">>")
         .widths(&[
             Constraint::Percentage(6),
@@ -148,13 +143,7 @@ fn draw_help(actions: &Actions) -> Table {
     }
 
     Table::new(rows)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(Style::default().fg(Color::Black))
-                .title(title("Help")),
-        )
+        .block(create_block("Help"))
         .widths(&[Constraint::Length(11), Constraint::Min(20)])
         .column_spacing(1)
 }
@@ -203,30 +192,46 @@ fn draw_logs<'a>() -> TuiLoggerWidget<'a> {
         .style_info(Style::default().fg(Color::Green))
         .output_file(false)
         .output_target(false)
-        .block(
-            Block::default()
-                .title(title("Logs"))
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Black))
-                .border_type(BorderType::Rounded),
-        )
+        .block(create_block("Logs"))
 }
 
 fn draw_filter(app: &App) -> Paragraph {
-    Paragraph::new(app.input.as_ref()).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .border_style(Style::default().fg(Color::Black))
-            .title(title("Filter")),
-    )
+    Paragraph::new(app.input.as_ref()).block(create_block("Filter"))
 }
 
-fn title(text: impl AsRef<str>) -> Spans<'static> {
-    Spans::from(vec![Span::styled(
-        format!(" {} ", text.as_ref()),
-        Style::default()
-            .fg(Color::White)
-            .add_modifier(Modifier::BOLD),
-    )])
+fn draw_selection<'a>() -> Block<'a> {
+    create_block("Selection")
+}
+
+fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
+    let filters: Vec<_> = app
+        .active_filter
+        .iter()
+        .map(|f| {
+            Spans::from(vec![
+                Span::raw(format!(" [{f}]")),
+                Span::styled(" ⇣", Style::default()),
+                Span::styled(" 🢒", Style::default().fg(Color::Black)),
+            ])
+        })
+        .collect();
+
+    let count = filters.len();
+    let bt = format!("Sort ({count})");
+
+    Paragraph::new(filters).block(create_block(bt))
+}
+
+fn create_block<'a>(title: impl Into<String>) -> Block<'a> {
+    let title = title.into();
+    Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(Color::Black))
+        .title(Span::styled(
+            format!(" {title} "),
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .fg(Color::White),
+        ))
 }

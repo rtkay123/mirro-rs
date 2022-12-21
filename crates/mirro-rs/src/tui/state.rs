@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[cfg(feature = "archlinux")]
 use archlinux::ArchLinux;
 
@@ -14,6 +16,21 @@ pub enum AppReturn {
     Continue,
 }
 
+pub enum Filter {
+    Alphabetical,
+    Mirror,
+}
+
+impl Display for Filter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Filter::Alphabetical => "a",
+            Filter::Mirror => "c",
+        };
+        write!(f, "{str}")
+    }
+}
+
 pub struct App {
     pub show_popup: bool,
     pub actions: Actions,
@@ -23,6 +40,7 @@ pub struct App {
     pub input: String,
     pub input_cursor_position: usize,
     pub show_input: bool,
+    pub active_filter: Vec<Filter>,
 }
 
 impl App {
@@ -36,6 +54,7 @@ impl App {
             io_tx,
             input: String::default(),
             input_cursor_position: 0,
+            active_filter: vec![Filter::Alphabetical, Filter::Mirror],
         }
     }
 
