@@ -10,7 +10,7 @@ use tui_logger::TuiLoggerWidget;
 
 use super::{actions::Actions, state::App};
 
-pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
+pub fn ui(f: &mut Frame<impl Backend>, app: &mut App) {
     let area = f.size();
     check_size(&area);
 
@@ -57,8 +57,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
 
         f.render_widget(draw_sort(app), content_bar[0]);
 
-        let table = draw_table(app);
-        f.render_widget(table, content_bar[1]);
+        draw_table(app, f, content_bar[1]);
     }
 
     if app.show_popup {
@@ -74,7 +73,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
     }
 }
 
-fn draw_table(app: &App) -> Table {
+fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
     let header_cells = ["  index", "╭─── country", "mirrors"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
@@ -88,12 +87,31 @@ fn draw_table(app: &App) -> Table {
                     .to_ascii_lowercase()
                     .contains(&app.input.to_ascii_lowercase())
                 {
-                    let item_name = format!("├─[{}] {}", f.code, f.name);
+                    let mut selected = false;
+                    let item_name = match app.table_state.selected() {
+                        Some(index) => {
+                            if idx == index {
+                                selected = true;
+                                format!("├─»[{}] {}«", f.code, f.name)
+                            } else {
+                                format!("├─ [{}] {}", f.code, f.name)
+                            }
+                        }
+                        None => format!("├─ [{}] {}", f.code, f.name),
+                    };
                     let index = format!("  {idx}│");
                     return Some(Row::new(
                         [index, item_name, f.mirrors.len().to_string()]
                             .iter()
-                            .map(|c| Cell::from(c.clone()).style(Style::default().fg(Color::Blue))),
+                            .map(|c| {
+                                Cell::from(c.clone()).style(if selected {
+                                    Style::default()
+                                        .add_modifier(Modifier::BOLD)
+                                        .fg(Color::Green)
+                                } else {
+                                    Style::default()
+                                })
+                            }),
                     ));
                 } else {
                     None
@@ -110,14 +128,13 @@ fn draw_table(app: &App) -> Table {
     let t = Table::new(items)
         .header(header)
         .block(create_block(format!("Results from ({count}) countries")))
-        .highlight_symbol(">>")
         .widths(&[
             Constraint::Percentage(6),
             Constraint::Length(30),
             Constraint::Min(10),
         ]);
 
-    t
+    f.render_stateful_widget(t, region, &mut app.table_state);
 }
 
 fn draw_help(actions: &Actions) -> Table {
@@ -191,6 +208,8 @@ fn draw_logs<'a>() -> TuiLoggerWidget<'a> {
         .style_trace(Style::default().fg(Color::Magenta))
         .style_info(Style::default().fg(Color::Green))
         .output_file(false)
+        .output_timestamp(None)
+        .output_line(false)
         .output_target(false)
         .block(create_block("Logs"))
 }

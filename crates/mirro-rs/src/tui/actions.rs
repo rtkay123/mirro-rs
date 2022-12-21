@@ -7,11 +7,19 @@ pub enum Action {
     ClosePopUp,
     Quit,
     ShowInput,
+    NavigateDown,
+    NavigateUp,
 }
 
 impl Action {
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 3] = [Action::Quit, Action::ClosePopUp, Action::ShowInput];
+        static ACTIONS: [Action; 5] = [
+            Action::Quit,
+            Action::ClosePopUp,
+            Action::ShowInput,
+            Action::NavigateDown,
+            Action::NavigateUp,
+        ];
         ACTIONS.iter()
     }
 
@@ -20,6 +28,8 @@ impl Action {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
             Action::ClosePopUp => &[Key::Char('p')],
             Action::ShowInput => &[Key::Ctrl('f'), Key::Char('/')],
+            Action::NavigateDown => &[Key::Char('k'), Key::Up],
+            Action::NavigateUp => &[Key::Char('j'), Key::Down],
         }
     }
 }
@@ -30,6 +40,8 @@ impl Display for Action {
             Action::ClosePopUp => "close popup",
             Action::Quit => "quit",
             Action::ShowInput => "toggle filter",
+            Action::NavigateDown => "up",
+            Action::NavigateUp => "down",
         };
         write!(f, "{str}")
     }

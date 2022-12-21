@@ -81,7 +81,7 @@ async fn run_app(
     loop {
         let mut app = app.lock().await;
 
-        terminal.draw(|f| ui(f, &app))?;
+        terminal.draw(|f| ui(f, &mut app))?;
 
         let result = match events.next().await {
             InputEvent::Input(key) => app.dispatch_action(key).await,

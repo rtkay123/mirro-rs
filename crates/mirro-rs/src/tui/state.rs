@@ -3,7 +3,8 @@ use std::fmt::Display;
 #[cfg(feature = "archlinux")]
 use archlinux::ArchLinux;
 
-use log::{debug, error, warn};
+use log::{error, warn};
+use tui::widgets::TableState;
 use unicode_width::UnicodeWidthStr;
 
 use crate::tui::actions::Action;
@@ -41,6 +42,7 @@ pub struct App {
     pub input_cursor_position: usize,
     pub show_input: bool,
     pub active_filter: Vec<Filter>,
+    pub table_state: TableState,
 }
 
 impl App {
@@ -55,12 +57,13 @@ impl App {
             input: String::default(),
             input_cursor_position: 0,
             active_filter: vec![Filter::Alphabetical, Filter::Mirror],
+            table_state: TableState::default(),
         }
     }
 
     pub async fn dispatch_action(&mut self, key: Key) -> AppReturn {
         if let Some(action) = self.actions.find(key) {
-            debug!("action: [{action:?}]");
+            //debug!("action: [{action:?}]");
             if key.is_exit() && !self.show_input {
                 AppReturn::Exit
             } else {
@@ -80,6 +83,14 @@ impl App {
                     Action::ShowInput => {
                         // replace log widget
                         self.show_input = !self.show_input;
+                        AppReturn::Continue
+                    }
+                    Action::NavigateDown => {
+                        self.previous();
+                        AppReturn::Continue
+                    }
+                    Action::NavigateUp => {
+                        self.next();
                         AppReturn::Continue
                     }
                 }
@@ -151,8 +162,48 @@ impl App {
     }
 
     pub fn ready(&mut self) {
-        self.actions = vec![Action::ShowInput, Action::ClosePopUp, Action::Quit].into();
+        self.actions = vec![
+            Action::ShowInput,
+            Action::ClosePopUp,
+            Action::Quit,
+            Action::NavigateUp,
+            Action::NavigateDown,
+        ]
+        .into();
+        self.table_state.select(Some(0));
         self.show_popup = false;
+    }
+
+    pub fn next(&mut self) {
+        if let Some(mirrors) = &self.mirrors {
+            let i = match self.table_state.selected() {
+                Some(i) => {
+                    if i >= mirrors.countries.len() - 1 {
+                        0
+                    } else {
+                        i + 1
+                    }
+                }
+                None => 0,
+            };
+            self.table_state.select(Some(i));
+        }
+    }
+
+    pub fn previous(&mut self) {
+        if let Some(mirrors) = &self.mirrors {
+            let i = match self.table_state.selected() {
+                Some(i) => {
+                    if i == 0 {
+                        mirrors.countries.len() - 1
+                    } else {
+                        i - 1
+                    }
+                }
+                None => 0,
+            };
+            self.table_state.select(Some(i));
+        }
     }
 }
 
