@@ -47,7 +47,7 @@ impl App {
             input_cursor_position: 0,
             active_sort: vec![Sort::Alphabetical, Sort::MirrorCount],
             table_state: TableState::default(),
-            active_filter: vec![],
+            active_filter: vec![Filter::Https, Filter::Http],
         }
     }
 

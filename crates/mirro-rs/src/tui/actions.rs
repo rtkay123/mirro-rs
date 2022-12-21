@@ -54,10 +54,10 @@ impl Display for Action {
             Action::ShowInput => "toggle filter",
             Action::NavigateDown => "up",
             Action::NavigateUp => "down",
-            Action::FilterHttps => "filter https",
-            Action::FilterHttp => "filter http",
-            Action::FilterRsync => "filter rsync",
-            Action::FilterSyncing => "filter syncing",
+            Action::FilterHttps => "toggle https",
+            Action::FilterHttp => "toggle http",
+            Action::FilterRsync => "toggle rsync",
+            Action::FilterSyncing => "toggle in-sync",
         };
         write!(f, "{str}")
     }

@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+#[allow(dead_code)]
 pub enum Sort {
     Alphabetical,
     MirrorCount,

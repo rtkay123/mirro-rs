@@ -8,6 +8,7 @@ use crate::response::external::Root;
 mod tests;
 
 mod response;
+pub use response::external::Protocol;
 pub use response::internal::*;
 
 const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";

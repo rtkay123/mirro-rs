@@ -1,3 +1,6 @@
+#[cfg(feature = "archlinux")]
+use archlinux::Protocol;
+
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -10,6 +13,7 @@ use tui_logger::TuiLoggerWidget;
 
 use super::{
     actions::{Action, Actions},
+    dispatch::filter::Filter,
     state::App,
 };
 
@@ -80,15 +84,26 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
     let header_cells = ["  index", "╭─── country", "mirrors"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
+
     let items: Vec<_> = if let Some(items) = app.mirrors.as_ref() {
         items
             .countries
             .iter()
             .enumerate()
             .filter_map(|(idx, f)| {
-                if f.name
+                let count = f
+                    .mirrors
+                    .iter()
+                    .filter(|f| app.active_filter.contains(&protocol_mapper(f.protocol)))
+                    .count();
+
+                if count == 0 {
+                    None
+                } else if f
+                    .name
                     .to_ascii_lowercase()
                     .contains(&app.input.to_ascii_lowercase())
+                // filters countries
                 {
                     let mut selected = false;
                     let default = format!("├─ [{}] {}", f.code, f.name);
@@ -103,20 +118,20 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                         }
                         None => default,
                     };
+
                     let index = format!("  {idx}│");
-                    return Some(Row::new(
-                        [index, item_name, f.mirrors.len().to_string()]
-                            .iter()
-                            .map(|c| {
-                                Cell::from(c.clone()).style(if selected {
-                                    Style::default()
-                                        .add_modifier(Modifier::BOLD)
-                                        .fg(Color::Green)
-                                } else {
-                                    Style::default()
-                                })
-                            }),
-                    ));
+
+                    return Some(Row::new([index, item_name, count.to_string()].iter().map(
+                        |c| {
+                            Cell::from(c.clone()).style(if selected {
+                                Style::default()
+                                    .add_modifier(Modifier::BOLD)
+                                    .fg(Color::Green)
+                            } else {
+                                Style::default()
+                            })
+                        },
+                    )));
                 } else {
                     None
                 }
@@ -290,4 +305,12 @@ fn create_block<'a>(title: impl Into<String>) -> Block<'a> {
                 .add_modifier(Modifier::BOLD)
                 .fg(Color::White),
         ))
+}
+
+fn protocol_mapper(protocol: Protocol) -> Filter {
+    match protocol {
+        Protocol::Rsync => Filter::Rsync,
+        Protocol::Http => Filter::Http,
+        Protocol::Https => Filter::Https,
+    }
 }

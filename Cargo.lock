@@ -463,6 +463,7 @@ dependencies = [
  "anyhow",
  "archlinux",
  "crossterm",
+ "itertools",
  "log",
  "tokio",
  "tui",
