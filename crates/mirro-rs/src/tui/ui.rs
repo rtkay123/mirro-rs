@@ -1,6 +1,7 @@
 #[cfg(feature = "archlinux")]
 use archlinux::Protocol;
 
+use itertools::Itertools;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -89,71 +90,84 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
         items
             .countries
             .iter()
-            .enumerate()
-            .filter_map(|(idx, f)| {
+            .filter_map(|f| {
                 let count = f
                     .mirrors
                     .iter()
                     .filter(|f| app.active_filter.contains(&protocol_mapper(f.protocol)))
                     .count();
-
                 if count == 0 {
                     None
                 } else if f
                     .name
                     .to_ascii_lowercase()
                     .contains(&app.input.to_ascii_lowercase())
-                // filters countries
                 {
-                    let mut selected = false;
-                    let default = format!("├─ [{}] {}", f.code, f.name);
-                    let item_name = match app.table_state.selected() {
-                        Some(index) => {
-                            if idx == index {
-                                selected = true;
-                                format!("├─»[{}] {}«", f.code, f.name)
-                            } else {
-                                default
-                            }
-                        }
-                        None => default,
-                    };
-
-                    let index = format!("  {idx}│");
-
-                    return Some(Row::new([index, item_name, count.to_string()].iter().map(
-                        |c| {
-                            Cell::from(c.clone()).style(if selected {
-                                Style::default()
-                                    .add_modifier(Modifier::BOLD)
-                                    .fg(Color::Green)
-                            } else {
-                                Style::default()
-                            })
-                        },
-                    )));
+                    Some((f, count))
                 } else {
                     None
                 }
+            })
+            .enumerate()
+            .map(|(idx, (f, count))| {
+                let mut selected = false;
+                let default = format!("├─ [{}] {}", f.code, f.name);
+                let item_name = match app.scroll_pos as usize == idx {
+                    true => {
+                        if idx == app.scroll_pos as usize {
+                            selected = true;
+                            format!("├─»[{}] {}«", f.code, f.name)
+                        } else {
+                            default
+                        }
+                    }
+                    false => default,
+                };
+
+                let index = format!("  {idx}│");
+
+                return Row::new([index, item_name, count.to_string()].iter().map(|c| {
+                    Cell::from(c.clone()).style(if selected {
+                        Style::default()
+                            .add_modifier(Modifier::BOLD)
+                            .fg(Color::Green)
+                    } else {
+                        Style::default()
+                    })
+                }));
             })
             .collect()
     } else {
         vec![]
     };
 
-    let count = items.len();
+    app.filtered_count = items.len();
+
+    // 3 is the height offset
+    let max_items = region.height - 3;
+
+    let pagination = items.chunks(max_items.into()).collect_vec();
+
     let header = Row::new(header_cells).height(1);
 
-    let t = Table::new(items)
-        .header(header)
-        .block(create_block(format!("Results from ({count}) countries")))
-        .widths(&[
-            Constraint::Percentage(6),
-            Constraint::Length(33),
-            Constraint::Min(10),
-        ]);
+    let t = Table::new(if pagination.is_empty() {
+        vec![]
+    } else {
+        let val = app.scroll_pos / max_items as isize;
+        pagination[val as usize].to_vec()
+    })
+    .header(header)
+    .block(create_block(format!(
+        "Results from ({}) countries",
+        app.filtered_count
+    )))
+    .widths(&[
+        Constraint::Percentage(6),
+        Constraint::Length(33),
+        Constraint::Min(10),
+    ]);
 
-    f.render_stateful_widget(t, region, &mut app.table_state);
+    f.render_widget(t, region);
 }
 
 fn draw_help(actions: &Actions) -> Table {

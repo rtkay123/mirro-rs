@@ -1,8 +1,7 @@
 #[cfg(feature = "archlinux")]
 use archlinux::ArchLinux;
 
-use log::{error, warn};
-use tui::widgets::TableState;
+use log::{debug, error, warn};
 use unicode_width::UnicodeWidthStr;
 
 use crate::tui::actions::Action;
@@ -30,8 +29,9 @@ pub struct App {
     pub input_cursor_position: usize,
     pub show_input: bool,
     pub active_sort: Vec<Sort>,
-    pub table_state: TableState,
     pub active_filter: Vec<Filter>,
+    pub scroll_pos: isize,
+    pub filtered_count: usize,
 }
 
 impl App {
@@ -46,8 +46,9 @@ impl App {
             input: String::default(),
             input_cursor_position: 0,
             active_sort: vec![Sort::Alphabetical, Sort::MirrorCount],
-            table_state: TableState::default(),
             active_filter: vec![Filter::Https, Filter::Http],
+            scroll_pos: 0,
+            filtered_count: 0,
         }
     }
 
@@ -71,7 +72,6 @@ impl App {
                         AppReturn::Continue
                     }
                     Action::ShowInput => {
-                        // replace log widget
                         self.show_input = !self.show_input;
                         AppReturn::Continue
                     }
@@ -168,39 +168,25 @@ impl App {
             Action::FilterSyncing,
         ]
         .into();
-        self.table_state.select(Some(0));
+        if let Some(mirrors) = self.mirrors.as_ref() {
+            self.filtered_count = mirrors.countries.len();
+        }
         self.show_popup = false;
     }
 
     pub fn next(&mut self) {
-        if let Some(mirrors) = &self.mirrors {
-            let i = match self.table_state.selected() {
-                Some(i) => {
-                    if i >= mirrors.countries.len() - 1 {
-                        0
-                    } else {
-                        i + 1
-                    }
-                }
-                None => 0,
-            };
-            self.table_state.select(Some(i));
+        if self.scroll_pos + 1 == self.filtered_count as isize {
+            self.scroll_pos = 0;
+        } else {
+            self.scroll_pos += 1;
         }
     }
 
     pub fn previous(&mut self) {
-        if let Some(mirrors) = &self.mirrors {
-            let i = match self.table_state.selected() {
-                Some(i) => {
-                    if i == 0 {
-                        mirrors.countries.len() - 1
-                    } else {
-                        i - 1
-                    }
-                }
-                None => 0,
-            };
-            self.table_state.select(Some(i));
+        if self.scroll_pos - 1 < 0 {
+            self.scroll_pos = (self.filtered_count - 1) as isize;
+        } else {
+            self.scroll_pos -= 1;
         }
     }
 }
@@ -212,9 +198,12 @@ fn insert_character(app: &mut App, key: char) {
 
 fn insert_filter(app: &mut App, filter: Filter) -> AppReturn {
     if let Some(idx) = app.active_filter.iter().position(|f| *f == filter) {
+        debug!("protocol filter: added {filter}");
         app.active_filter.remove(idx);
     } else {
+        debug!("protocol filter: added {filter}");
         app.active_filter.push(filter);
     }
+    app.scroll_pos = 0;
     AppReturn::Continue
 }
