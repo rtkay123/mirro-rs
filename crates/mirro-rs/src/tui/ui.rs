@@ -8,7 +8,10 @@ use tui::{
 };
 use tui_logger::TuiLoggerWidget;
 
-use super::{actions::Actions, state::App};
+use super::{
+    actions::{Action, Actions},
+    state::App,
+};
 
 pub fn ui(f: &mut Frame<impl Backend>, app: &mut App) {
     let area = f.size();
@@ -88,16 +91,17 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                     .contains(&app.input.to_ascii_lowercase())
                 {
                     let mut selected = false;
+                    let default = format!("├─ [{}] {}", f.code, f.name);
                     let item_name = match app.table_state.selected() {
                         Some(index) => {
                             if idx == index {
                                 selected = true;
                                 format!("├─»[{}] {}«", f.code, f.name)
                             } else {
-                                format!("├─ [{}] {}", f.code, f.name)
+                                default
                             }
                         }
-                        None => format!("├─ [{}] {}", f.code, f.name),
+                        None => default,
                     };
                     let index = format!("  {idx}│");
                     return Some(Row::new(
@@ -130,7 +134,7 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
         .block(create_block(format!("Results from ({count}) countries")))
         .widths(&[
             Constraint::Percentage(6),
-            Constraint::Length(30),
+            Constraint::Length(33),
             Constraint::Min(10),
         ]);
 
@@ -141,27 +145,32 @@ fn draw_help(actions: &Actions) -> Table {
     let key_style = Style::default().fg(Color::LightCyan);
     let help_style = Style::default().fg(Color::Gray);
 
-    let mut rows = vec![];
-    for action in actions.actions().iter() {
-        let mut first = true;
-        for key in action.keys() {
-            let help = if first {
-                first = false;
-                action.to_string()
-            } else {
-                String::from("")
-            };
-            let row = Row::new(vec![
-                Cell::from(Span::styled(key.to_string(), key_style)),
-                Cell::from(Span::styled(help, help_style)),
-            ]);
-            rows.push(row);
+    let rows = actions.actions().iter().filter_map(|action| match action {
+        Action::NavigateDown | Action::NavigateUp => None,
+        _ => {
+            let mut actions: Vec<_> = action
+                .keys()
+                .iter()
+                .map(|k| Span::styled(k.to_string(), key_style))
+                .collect();
+
+            if actions.len() == 1 {
+                actions.push(Span::raw(""));
+            }
+
+            let text = Span::styled(action.to_string(), help_style);
+            actions.push(text);
+            Some(Row::new(actions))
         }
-    }
+    });
 
     Table::new(rows)
         .block(create_block("Help"))
-        .widths(&[Constraint::Length(11), Constraint::Min(20)])
+        .widths(&[
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+            Constraint::Percentage(60),
+        ])
         .column_spacing(1)
 }
 

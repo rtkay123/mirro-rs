@@ -93,6 +93,9 @@ impl App {
                         self.next();
                         AppReturn::Continue
                     }
+                    Action::FilterHttps => todo!(),
+                    Action::FilterHttp => todo!(),
+                    Action::FilterRsync => todo!(),
                 }
             }
         } else {

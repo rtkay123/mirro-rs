@@ -9,16 +9,22 @@ pub enum Action {
     ShowInput,
     NavigateDown,
     NavigateUp,
+    FilterHttps,
+    FilterHttp,
+    FilterRsync,
 }
 
 impl Action {
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 5] = [
+        static ACTIONS: [Action; 8] = [
             Action::Quit,
             Action::ClosePopUp,
             Action::ShowInput,
             Action::NavigateDown,
             Action::NavigateUp,
+            Action::FilterHttp,
+            Action::FilterHttps,
+            Action::FilterRsync,
         ];
         ACTIONS.iter()
     }
@@ -30,6 +36,9 @@ impl Action {
             Action::ShowInput => &[Key::Ctrl('f'), Key::Char('/')],
             Action::NavigateDown => &[Key::Char('k'), Key::Up],
             Action::NavigateUp => &[Key::Char('j'), Key::Down],
+            Action::FilterHttps => &[Key::Ctrl('s')],
+            Action::FilterHttp => &[Key::Ctrl('h')],
+            Action::FilterRsync => &[Key::Ctrl('s')],
         }
     }
 }
@@ -42,6 +51,9 @@ impl Display for Action {
             Action::ShowInput => "toggle filter",
             Action::NavigateDown => "up",
             Action::NavigateUp => "down",
+            Action::FilterHttps => "filter https",
+            Action::FilterHttp => "filter http",
+            Action::FilterRsync => "filter rsync",
         };
         write!(f, "{str}")
     }
