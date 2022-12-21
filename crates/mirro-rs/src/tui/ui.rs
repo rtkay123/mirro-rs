@@ -73,7 +73,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &App) {
 }
 
 fn draw_table(app: &App) -> Table {
-    let header_cells = ["index", "country:", "mirrors:"]
+    let header_cells = ["  index", "╭─── country", "mirrors"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
     let items: Vec<_> = if let Some(items) = app.mirrors.as_ref() {
@@ -86,8 +86,8 @@ fn draw_table(app: &App) -> Table {
                     .to_ascii_lowercase()
                     .contains(&app.input.to_ascii_lowercase())
                 {
-                    let item_name = format!("{}| {}", f.code, f.name);
-                    let index = format!("{idx}.");
+                    let item_name = format!("├─[{}] {}", f.code, f.name);
+                    let index = format!("  {idx}│");
                     return Some(Row::new(
                         [index, item_name, f.mirrors.len().to_string()]
                             .iter()
@@ -117,7 +117,7 @@ fn draw_table(app: &App) -> Table {
         )
         .highlight_symbol(">>")
         .widths(&[
-            Constraint::Percentage(4),
+            Constraint::Percentage(6),
             Constraint::Length(30),
             Constraint::Min(10),
         ]);
