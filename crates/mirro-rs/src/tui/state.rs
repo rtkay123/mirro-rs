@@ -66,12 +66,15 @@ impl App {
             } else {
                 match action {
                     Action::ClosePopUp => {
-                        self.show_popup = !self.show_popup;
+                        if !self.show_input {
+                            self.show_popup = !self.show_popup;
+                        } else {
+                            insert_character(self, 'p');
+                        }
                         AppReturn::Continue
                     }
                     Action::Quit => {
-                        self.input.insert(self.input_cursor_position, 'q');
-                        self.input_cursor_position += 1;
+                        insert_character(self, 'q');
                         AppReturn::Continue
                     }
                     Action::ShowInput => {
@@ -118,9 +121,8 @@ impl App {
                     Key::End => {
                         self.input_cursor_position = self.input.width();
                     }
-                    Key::Char(e) => {
-                        self.input.insert(self.input_cursor_position, e);
-                        self.input_cursor_position += 1;
+                    Key::Char(c) => {
+                        insert_character(self, c);
                     }
                     Key::Esc => {
                         self.show_input = false;
@@ -152,4 +154,9 @@ impl App {
         self.actions = vec![Action::ShowInput, Action::ClosePopUp, Action::Quit].into();
         self.show_popup = false;
     }
+}
+
+fn insert_character(app: &mut App, key: char) {
+    app.input.insert(app.input_cursor_position, key);
+    app.input_cursor_position += 1;
 }
