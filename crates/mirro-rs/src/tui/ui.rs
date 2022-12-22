@@ -115,7 +115,7 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                     .to_ascii_lowercase()
                     .contains(&app.input.to_ascii_lowercase())
                 {
-                    Some((f, count))
+                    Some((f.clone(), count))
                 } else {
                     None
                 }
@@ -131,58 +131,30 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                     (f.name.clone(), 0)
                 }
             })
-            .enumerate()
-            .map(|(idx, (f, count))| {
-                let mut selected = false;
-                let default = format!("├─ [{}] {}", f.code, f.name);
-                let item_name = match app.scroll_pos as usize == idx {
-                    true => {
-                        if idx == app.scroll_pos as usize {
-                            selected = true;
-                            format!("├─»[{}] {}«", f.code, f.name)
-                        } else {
-                            default
-                        }
-                    }
-                    false => default,
-                };
-
-                let index = format!("  {idx}│");
-
-                return Row::new([index, item_name, count.to_string()].iter().map(|c| {
-                    Cell::from(c.clone()).style(if selected {
-                        Style::default()
-                            .add_modifier(Modifier::BOLD)
-                            .fg(Color::Green)
-                    } else {
-                        Style::default().fg(Color::Gray)
-                    })
-                }));
-            })
-            .collect()
+            .collect_vec()
     } else {
         vec![]
     };
 
-    app.filtered_count = items.len();
-
+    app.filtered_countries = items;
     // 3 is the height offset
-    let max_items = region.height - 3;
+    app.table_viewport_height = region.height - 3;
 
-    let pagination = items.chunks(max_items.into()).collect_vec();
+    let rows = app.rows();
+
+    let pagination_fragments = app.view_fragments(&rows);
 
     let header = Row::new(header_cells).height(1);
 
-    let t = Table::new(if pagination.is_empty() {
-        vec![]
+    let t = Table::new(if pagination_fragments.is_empty() {
+        rows
     } else {
-        let val = app.scroll_pos / max_items as isize;
-        pagination[val as usize].to_vec()
+        app.view(&pagination_fragments).to_vec()
     })
     .header(header)
     .block(create_block(format!(
         "Results from ({}) countries",
-        app.filtered_count
+        app.filtered_countries.len()
     )))
     .widths(&[
         Constraint::Percentage(6),

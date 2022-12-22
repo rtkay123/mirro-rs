@@ -1,9 +1,14 @@
 #[cfg(feature = "archlinux")]
 use archlinux::{
-    ArchLinux, {DateTime, Protocol, Utc},
+    ArchLinux, Country, {DateTime, Protocol, Utc},
 };
 
+use itertools::Itertools;
 use log::{debug, error, info, warn};
+use tui::{
+    style::{Color, Modifier, Style},
+    widgets::{Cell, Row},
+};
 use unicode_width::UnicodeWidthStr;
 
 use crate::tui::actions::Action;
@@ -33,8 +38,9 @@ pub struct App {
     pub active_sort: Vec<ViewSort>,
     pub active_filter: Vec<Filter>,
     pub scroll_pos: isize,
-    pub filtered_count: usize,
+    pub filtered_countries: Vec<(Country, usize)>,
     pub selected_mirrors: Vec<SelectedMirror>,
+    pub table_viewport_height: u16,
 }
 
 pub struct SelectedMirror {
@@ -61,8 +67,9 @@ impl App {
             active_sort: vec![ViewSort::Alphabetical],
             active_filter: vec![Filter::Https, Filter::Http],
             scroll_pos: 0,
-            filtered_count: 0,
+            table_viewport_height: 0,
             selected_mirrors: vec![],
+            filtered_countries: vec![],
         }
     }
 
@@ -162,6 +169,7 @@ impl App {
                     }
                     Key::Char(c) => {
                         insert_character(self, c);
+                        self.scroll_pos = 0;
                     }
                     Key::Esc => {
                         self.show_input = false;
@@ -205,14 +213,11 @@ impl App {
             Action::ToggleSelect,
         ]
         .into();
-        if let Some(mirrors) = self.mirrors.as_ref() {
-            self.filtered_count = mirrors.countries.len();
-        }
         self.show_popup = false;
     }
 
     pub fn next(&mut self) {
-        if self.scroll_pos + 1 == self.filtered_count as isize {
+        if self.scroll_pos + 1 == self.filtered_countries.len() as isize {
             self.scroll_pos = 0;
         } else {
             self.scroll_pos += 1;
@@ -221,16 +226,60 @@ impl App {
 
     pub fn previous(&mut self) {
         if self.scroll_pos - 1 < 0 {
-            self.scroll_pos = (self.filtered_count - 1) as isize;
+            self.scroll_pos = (self.filtered_countries.len() - 1) as isize;
         } else {
             self.scroll_pos -= 1;
         }
+    }
+
+    pub fn view_fragments<'a, T>(&'a self, iter: &'a [T]) -> Vec<&'a [T]> {
+        iter.chunks(self.table_viewport_height.into()).collect_vec()
+    }
+
+    pub fn rows(&self) -> Vec<Row> {
+        self.filtered_countries
+            .iter()
+            .enumerate()
+            .map(|(idx, (f, count))| {
+                let mut selected = false;
+                let default = format!("├─ [{}] {}", f.code, f.name);
+                let item_name = match self.scroll_pos as usize == idx {
+                    true => {
+                        if idx == self.scroll_pos as usize {
+                            selected = true;
+                            format!("├─»[{}] {}«", f.code, f.name)
+                        } else {
+                            default
+                        }
+                    }
+                    false => default,
+                };
+
+                let index = format!("  {idx}│");
+
+                return Row::new([index, item_name, count.to_string()].iter().map(|c| {
+                    Cell::from(c.clone()).style(if selected {
+                        Style::default()
+                            .add_modifier(Modifier::BOLD)
+                            .fg(Color::Green)
+                    } else {
+                        Style::default().fg(Color::Gray)
+                    })
+                }));
+            })
+            .collect_vec()
+    }
+
+    pub fn view<T: Copy>(&self, fragment: &[T]) -> T {
+        let val = (self.scroll_pos / self.table_viewport_height as isize) as usize;
+        fragment[val]
     }
 }
 
 fn insert_character(app: &mut App, key: char) {
     app.input.insert(app.input_cursor_position, key);
     app.input_cursor_position += 1;
+    app.scroll_pos = 0;
 }
 
 fn insert_filter(app: &mut App, filter: Filter) -> AppReturn {
