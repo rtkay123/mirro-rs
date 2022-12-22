@@ -43,6 +43,7 @@ pub struct App {
     pub table_viewport_height: u16,
 }
 
+#[derive(Debug, Clone)]
 pub struct SelectedMirror {
     pub country_code: String,
     pub protocol: Protocol,
@@ -125,7 +126,7 @@ impl App {
                     Action::ViewSortAlphabetically => insert_sort(self, ViewSort::Alphabetical),
                     Action::ViewSortMirrorCount => insert_sort(self, ViewSort::MirrorCount),
                     Action::ToggleSelect => {
-                        info!("mirror selected");
+                        self.focused_country();
                         AppReturn::Continue
                     }
                 }
@@ -271,9 +272,88 @@ impl App {
     }
 
     pub fn view<T: Copy>(&self, fragment: &[T]) -> T {
-        let val = (self.scroll_pos / self.table_viewport_height as isize) as usize;
-        fragment[val]
+        fragment[self.fragment_number()]
     }
+
+    pub fn focused_country(&mut self) {
+        if let Some(_items) = self.mirrors.as_ref() {
+            let country = if self.scroll_pos < self.table_viewport_height as isize {
+                let (country, _) = &self.filtered_countries[self.scroll_pos as usize];
+                // we can directly index
+                info!("selected: {}", country.name);
+                country
+            } else {
+                let page = self.fragment_number();
+                let index = (self.scroll_pos
+                    - (page * self.table_viewport_height as usize) as isize)
+                    as usize;
+                let fragments = self.view_fragments(&self.filtered_countries);
+                let frag = fragments[page];
+                let (country, _) = &frag[index];
+                info!("selected: {}", country.name);
+                country
+            };
+
+            let mut mirrors = country
+                .mirrors
+                .iter()
+                //     .filter(|f| {
+                //         if self.in_sync_only() {
+                //             if let Some(mirror_sync) = f.last_sync {
+                //                 let duration = _items.last_check - mirror_sync;
+                //                 duration.num_hours() <= 24
+                //                     && self.active_filter.contains(&protocol_mapper(f.protocol))
+                //             } else {
+                //                 false
+                //             }
+                //         } else {
+                //             self.active_filter.contains(&protocol_mapper(f.protocol))
+                //         }
+                //     })
+                .map(|f| SelectedMirror {
+                    country_code: country.code.to_string(),
+                    protocol: f.protocol,
+                    completion_pct: f.completion_pct,
+                    delay: f.delay,
+                    duration_avg: f.duration_avg,
+                    duration_stddev: f.duration_stddev,
+                    last_sync: f.last_sync,
+                })
+                .collect_vec();
+
+            let pos = self
+                .selected_mirrors
+                .iter()
+                .positions(|f| f.country_code == country.code)
+                .collect_vec();
+
+            if pos.is_empty() {
+                self.selected_mirrors.append(&mut mirrors)
+            } else {
+                let new_items = self
+                    .selected_mirrors
+                    .iter()
+                    .filter_map(|f| {
+                        if f.country_code != country.code {
+                            Some(f.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect_vec();
+
+                self.selected_mirrors = new_items;
+            }
+        }
+    }
+
+    fn fragment_number(&self) -> usize {
+        (self.scroll_pos / self.table_viewport_height as isize) as usize
+    }
+
+    // pub fn in_sync_only(&self) -> bool {
+    //     self.active_filter.contains(&Filter::InSync)
+    // }
 }
 
 fn insert_character(app: &mut App, key: char) {

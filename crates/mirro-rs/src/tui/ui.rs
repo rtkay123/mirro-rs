@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[cfg(feature = "archlinux")]
 use archlinux::Protocol;
 
@@ -86,8 +88,8 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
 
-    let items: Vec<_> = if let Some(items) = app.mirrors.as_mut() {
-        items
+    if let Some(items) = app.mirrors.as_mut() {
+        let val = items
             .countries
             .iter()
             .filter_map(|f| {
@@ -131,12 +133,10 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                     (f.name.clone(), 0)
                 }
             })
-            .collect_vec()
-    } else {
-        vec![]
+            .collect_vec();
+        app.filtered_countries = val;
     };
 
-    app.filtered_countries = items;
     // 3 is the height offset
     app.table_viewport_height = region.height - 3;
 
@@ -259,24 +259,24 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
 
     let items = app.selected_mirrors.iter().map(|f| {
         let delay = match f.delay {
-            Some(d) => d.to_string(),
+            Some(d) => format_float(d),
             None => "-".to_string(),
         };
 
         let dur = match f.duration_avg {
-            Some(d) => d.to_string(),
+            Some(d) => format_float(d),
             None => "-".to_string(),
         };
 
         let std_dev = match f.duration_stddev {
-            Some(d) => d.to_string(),
+            Some(d) => format_float(d),
             None => "-".to_string(),
         };
 
         Row::new(vec![
             Cell::from(f.country_code.to_string()),
             Cell::from(f.protocol.to_string()),
-            Cell::from(f.completion_pct.to_string()),
+            Cell::from(format_float(f.completion_pct)),
             Cell::from(delay),
             Cell::from(dur),
             Cell::from(std_dev),
@@ -289,7 +289,10 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
         // It has an optional header, which is simply a Row always visible at the top.
         .header(headers)
         // As any other widget, a Table can be wrapped in a Block.
-        .block(create_block("Selection"))
+        .block(create_block(format!(
+            "Selection ({})",
+            app.selected_mirrors.len()
+        )))
         // Columns widths are constrained in the same way as Layout...
         .widths(&[
             Constraint::Percentage(16),
@@ -368,10 +371,14 @@ fn create_block<'a>(title: impl Into<String>) -> Block<'a> {
         ))
 }
 
-fn protocol_mapper(protocol: Protocol) -> Filter {
+pub fn protocol_mapper(protocol: Protocol) -> Filter {
     match protocol {
         Protocol::Rsync => Filter::Rsync,
         Protocol::Http => Filter::Http,
         Protocol::Https => Filter::Https,
     }
+}
+
+fn format_float<T: Copy + Display>(str: T) -> String {
+    format!("{str:.2}")
 }
