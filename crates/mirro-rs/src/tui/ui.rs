@@ -300,8 +300,15 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
                 }
                 None => Style::default(),
             }),
-            Cell::from(dur.map(|f| f.to_string()).unwrap_or("-".to_string())),
-            Cell::from(std_dev.map(|f| f.to_string()).unwrap_or("-".to_string())),
+            Cell::from(
+                dur.map(|f| f.to_string())
+                    .unwrap_or_else(|| "-".to_string()),
+            ),
+            Cell::from(
+                std_dev
+                    .map(|f| f.to_string())
+                    .unwrap_or_else(|| "-".to_string()),
+            ),
         ])
     });
 
