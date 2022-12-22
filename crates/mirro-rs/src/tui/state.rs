@@ -130,6 +130,35 @@ impl App {
                         self.focused_country();
                         AppReturn::Continue
                     }
+                    Action::SelectionSortCompletionPct => {
+                        self.selected_mirrors
+                            .sort_by(|a, b| b.completion_pct.total_cmp(&a.completion_pct));
+                        AppReturn::Continue
+                    }
+                    Action::SelectionSortDelay => {
+                        self.selected_mirrors.sort_by(|a, b| {
+                            let a = a.delay.unwrap_or_default();
+                            let b = b.delay.unwrap_or_default();
+                            a.partial_cmp(&b).unwrap()
+                        });
+                        AppReturn::Continue
+                    }
+                    Action::SelectionSortDuration => {
+                        self.selected_mirrors.sort_by(|a, b| {
+                            let a = a.duration_avg.unwrap_or_default();
+                            let b = b.duration_avg.unwrap_or_default();
+                            a.partial_cmp(&b).unwrap()
+                        });
+                        AppReturn::Continue
+                    }
+                    Action::SelectionSortScore => {
+                        self.selected_mirrors.sort_by(|a, b| {
+                            let a = a.duration_stddev.unwrap_or_default();
+                            let b = b.duration_stddev.unwrap_or_default();
+                            a.partial_cmp(&b).unwrap()
+                        });
+                        AppReturn::Continue
+                    }
                 }
             }
         } else {
@@ -210,9 +239,13 @@ impl App {
             Action::FilterHttps,
             Action::FilterRsync,
             Action::FilterSyncing,
+            Action::ToggleSelect,
             Action::ViewSortAlphabetically,
             Action::ViewSortMirrorCount,
-            Action::ToggleSelect,
+            Action::SelectionSortCompletionPct,
+            Action::SelectionSortDelay,
+            Action::SelectionSortDuration,
+            Action::SelectionSortScore,
         ]
         .into();
         self.show_popup = false;

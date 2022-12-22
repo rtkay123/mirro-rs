@@ -16,11 +16,15 @@ pub enum Action {
     ViewSortAlphabetically,
     ViewSortMirrorCount,
     ToggleSelect,
+    SelectionSortCompletionPct,
+    SelectionSortDelay,
+    SelectionSortDuration,
+    SelectionSortScore,
 }
 
 impl Action {
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 12] = [
+        static ACTIONS: [Action; 16] = [
             Action::Quit,
             Action::ClosePopUp,
             Action::ShowInput,
@@ -33,6 +37,10 @@ impl Action {
             Action::ViewSortMirrorCount,
             Action::ViewSortAlphabetically,
             Action::ToggleSelect,
+            Action::SelectionSortCompletionPct,
+            Action::SelectionSortDelay,
+            Action::SelectionSortDuration,
+            Action::SelectionSortScore,
         ];
         ACTIONS.iter()
     }
@@ -51,6 +59,10 @@ impl Action {
             Action::ViewSortAlphabetically => &[Key::Char('1')],
             Action::ViewSortMirrorCount => &[Key::Char('2')],
             Action::ToggleSelect => &[Key::Char(' ')],
+            Action::SelectionSortCompletionPct => &[Key::Char('5')],
+            Action::SelectionSortDelay => &[Key::Char('6')],
+            Action::SelectionSortDuration => &[Key::Char('7')],
+            Action::SelectionSortScore => &[Key::Char('8')],
         }
     }
 }
@@ -70,6 +82,10 @@ impl Display for Action {
             Action::ViewSortAlphabetically => "sort [country] A-Z",
             Action::ViewSortMirrorCount => "sort [country] mirrors",
             Action::ToggleSelect => "[de]select mirror",
+            Action::SelectionSortCompletionPct => "sort [selection] completion",
+            Action::SelectionSortDelay => "sort [selection] delay",
+            Action::SelectionSortDuration => "sort [selection] duration",
+            Action::SelectionSortScore => "sort [selection] score",
         };
         write!(f, "{str}")
     }

@@ -244,28 +244,17 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
         .map(|h| Cell::from(*h).style(Style::default()));
     let headers = Row::new(header_cells);
 
-    let err = -999.0;
-
     let items = app.selected_mirrors.iter().map(|f| {
-        let delay = match f.delay {
-            Some(d) => {
-                let duration = Duration::from_secs(d as u64);
-                let minutes = (duration.as_secs() / 60) % 60;
-                let hours = (duration.as_secs() / 60) / 60;
-                Some((hours, minutes))
-            }
-            None => None,
-        };
+        let delay = f.delay.map(|f| {
+            let duration = Duration::from_secs(f as u64);
+            let minutes = (duration.as_secs() / 60) % 60;
+            let hours = (duration.as_secs() / 60) / 60;
+            (hours, minutes)
+        });
 
-        let dur = match f.duration_avg {
-            Some(d) => format_float(d),
-            None => err,
-        };
+        let dur = f.duration_avg.map(format_float);
 
-        let std_dev = match f.duration_stddev {
-            Some(d) => format_float(d),
-            None => err,
-        };
+        let std_dev = f.duration_stddev.map(format_float);
 
         let completion = f.completion_pct;
 
@@ -311,8 +300,8 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
                 }
                 None => Style::default(),
             }),
-            Cell::from(dur.to_string()),
-            Cell::from(std_dev.to_string()),
+            Cell::from(dur.map(|f| f.to_string()).unwrap_or("-".to_string())),
+            Cell::from(std_dev.map(|f| f.to_string()).unwrap_or("-".to_string())),
         ])
     });
 
