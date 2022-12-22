@@ -276,13 +276,18 @@ impl App {
             .iter()
             .enumerate()
             .map(|(idx, (f, count))| {
+                let c = if idx == self.filtered_countries.len() - 1 {
+                    '╰'
+                } else {
+                    '├'
+                };
                 let mut selected = false;
-                let default = format!("├─ [{}] {}", f.code, f.name);
+                let default = format!("{c}─ [{}] {}", f.code, f.name);
                 let item_name = match self.scroll_pos as usize == idx {
                     true => {
                         if idx == self.scroll_pos as usize {
                             selected = true;
-                            format!("├─»[{}] {}«", f.code, f.name)
+                            format!("{c}─»[{}] {}«", f.code, f.name)
                         } else {
                             default
                         }
