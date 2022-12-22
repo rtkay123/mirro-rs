@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 #[cfg(feature = "archlinux")]
 use archlinux::{DateTime, Mirror, Protocol, Utc};
 
@@ -246,8 +248,13 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
 
     let items = app.selected_mirrors.iter().map(|f| {
         let delay = match f.delay {
-            Some(d) => format_float(d),
-            None => err,
+            Some(d) => {
+                let duration = Duration::from_secs(d as u64);
+                let minutes = (duration.as_secs() / 60) % 60;
+                let hours = (duration.as_secs() / 60) / 60;
+                Some((hours, minutes))
+            }
+            None => None,
         };
 
         let dur = match f.duration_avg {
@@ -288,7 +295,22 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
                     .fg(Color::Red)
                     .add_modifier(Modifier::SLOW_BLINK)
             }),
-            Cell::from(delay.to_string()),
+            Cell::from(match delay {
+                Some((hours, minutes)) => {
+                    format!("{hours}:{minutes}")
+                }
+                None => "-".to_string(),
+            })
+            .style(match delay {
+                Some((hours, _)) => {
+                    if hours < 1 {
+                        Style::default().fg(Color::Green)
+                    } else {
+                        Style::default()
+                    }
+                }
+                None => Style::default(),
+            }),
             Cell::from(dur.to_string()),
             Cell::from(std_dev.to_string()),
         ])
