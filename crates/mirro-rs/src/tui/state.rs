@@ -18,6 +18,7 @@ use super::{
     dispatch::{filter::Filter, sort::ViewSort},
     inputs::key::Key,
     io::IoEvent,
+    ui::filter_result,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -276,7 +277,7 @@ impl App {
     }
 
     pub fn focused_country(&mut self) {
-        if let Some(_items) = self.mirrors.as_ref() {
+        if let Some(items) = self.mirrors.as_ref() {
             let country = if self.scroll_pos < self.table_viewport_height as isize {
                 let (country, _) = &self.filtered_countries[self.scroll_pos as usize];
                 // we can directly index
@@ -297,19 +298,7 @@ impl App {
             let mut mirrors = country
                 .mirrors
                 .iter()
-                //     .filter(|f| {
-                //         if self.in_sync_only() {
-                //             if let Some(mirror_sync) = f.last_sync {
-                //                 let duration = _items.last_check - mirror_sync;
-                //                 duration.num_hours() <= 24
-                //                     && self.active_filter.contains(&protocol_mapper(f.protocol))
-                //             } else {
-                //                 false
-                //             }
-                //         } else {
-                //             self.active_filter.contains(&protocol_mapper(f.protocol))
-                //         }
-                //     })
+                .filter(|f| filter_result(self, &items.last_check, f))
                 .map(|f| SelectedMirror {
                     country_code: country.code.to_string(),
                     protocol: f.protocol,

@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 #[cfg(feature = "archlinux")]
-use archlinux::Protocol;
+use archlinux::{DateTime, Mirror, Protocol, Utc};
 
 use itertools::Itertools;
 use tui::{
@@ -88,27 +88,15 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
 
-    if let Some(items) = app.mirrors.as_mut() {
-        let val = items
+    if let Some(items) = app.mirrors.as_ref() {
+        app.filtered_countries = items
             .countries
             .iter()
             .filter_map(|f| {
                 let count = f
                     .mirrors
                     .iter()
-                    .filter(|f| {
-                        if app.active_filter.contains(&Filter::InSync) {
-                            if let Some(mirror_sync) = f.last_sync {
-                                let duration = items.last_check - mirror_sync;
-                                duration.num_hours() <= 24
-                                    && app.active_filter.contains(&protocol_mapper(f.protocol))
-                            } else {
-                                false
-                            }
-                        } else {
-                            app.active_filter.contains(&protocol_mapper(f.protocol))
-                        }
-                    })
+                    .filter(|f| filter_result(app, &items.last_check, f))
                     .count();
                 if count == 0 {
                     None
@@ -134,7 +122,6 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                 }
             })
             .collect_vec();
-        app.filtered_countries = val;
     };
 
     // 3 is the height offset
@@ -381,4 +368,17 @@ pub fn protocol_mapper(protocol: Protocol) -> Filter {
 
 fn format_float<T: Copy + Display>(str: T) -> String {
     format!("{str:.2}")
+}
+
+pub fn filter_result(app: &App, last_check: &DateTime<Utc>, f: &Mirror) -> bool {
+    if app.active_filter.contains(&Filter::InSync) {
+        if let Some(mirror_sync) = f.last_sync {
+            let duration = *last_check - mirror_sync;
+            duration.num_hours() <= 24 && app.active_filter.contains(&protocol_mapper(f.protocol))
+        } else {
+            false
+        }
+    } else {
+        app.active_filter.contains(&protocol_mapper(f.protocol))
+    }
 }
