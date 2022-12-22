@@ -94,7 +94,19 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                 let count = f
                     .mirrors
                     .iter()
-                    .filter(|f| app.active_filter.contains(&protocol_mapper(f.protocol)))
+                    .filter(|f| {
+                        if app.active_filter.contains(&Filter::InSync) {
+                            if let Some(mirror_sync) = f.last_sync {
+                                let duration = items.last_check - mirror_sync;
+                                duration.num_hours() <= 24
+                                    && app.active_filter.contains(&protocol_mapper(f.protocol))
+                            } else {
+                                false
+                            }
+                        } else {
+                            app.active_filter.contains(&protocol_mapper(f.protocol))
+                        }
+                    })
                     .count();
                 if count == 0 {
                     None
@@ -175,7 +187,7 @@ fn draw_help(actions: &Actions) -> Table {
     let help_style = Style::default().fg(Color::Gray);
 
     let rows = actions.actions().iter().filter_map(|action| match action {
-        Action::NavigateDown | Action::NavigateUp => None,
+        Action::NavigateUp | Action::NavigateDown => None,
         _ => {
             let mut actions: Vec<_> = action
                 .keys()
@@ -288,7 +300,10 @@ fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
             let mut ret = vec![Span::styled(
                 format!(" {f}"),
                 Style::default()
-                    .fg(Color::Blue)
+                    .fg(match f {
+                        Filter::InSync => Color::Cyan,
+                        _ => Color::Blue,
+                    })
                     .add_modifier(Modifier::BOLD),
             )];
             if idx < count - 1 {

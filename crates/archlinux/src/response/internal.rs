@@ -30,6 +30,7 @@ pub struct Mirror {
     pub delay: Option<i64>,
     pub duration_avg: Option<f64>,
     pub duration_stddev: Option<f64>,
+    pub last_sync: Option<DateTime<Utc>>,
 }
 
 impl From<Root> for ArchLinux {
@@ -60,6 +61,7 @@ impl From<Root> for ArchLinux {
                             delay: f.delay,
                             duration_avg: f.duration_avg,
                             duration_stddev: f.duration_stddev,
+                            last_sync: f.last_sync,
                         })
                     } else {
                         None

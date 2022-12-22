@@ -8,7 +8,7 @@ use crate::tui::actions::Action;
 
 use super::{
     actions::Actions,
-    dispatch::{filter::Filter, sort::Sort},
+    dispatch::{filter::Filter, sort::ViewSort},
     inputs::key::Key,
     io::IoEvent,
 };
@@ -28,7 +28,7 @@ pub struct App {
     pub input: String,
     pub input_cursor_position: usize,
     pub show_input: bool,
-    pub active_sort: Vec<Sort>,
+    pub active_sort: Vec<ViewSort>,
     pub active_filter: Vec<Filter>,
     pub scroll_pos: isize,
     pub filtered_count: usize,
@@ -45,7 +45,7 @@ impl App {
             io_tx,
             input: String::default(),
             input_cursor_position: 0,
-            active_sort: vec![Sort::Alphabetical, Sort::MirrorCount],
+            active_sort: vec![ViewSort::Alphabetical, ViewSort::MirrorCount],
             active_filter: vec![Filter::Https, Filter::Http],
             scroll_pos: 0,
             filtered_count: 0,
@@ -211,7 +211,7 @@ fn insert_character(app: &mut App, key: char) {
 
 fn insert_filter(app: &mut App, filter: Filter) -> AppReturn {
     if let Some(idx) = app.active_filter.iter().position(|f| *f == filter) {
-        debug!("protocol filter: added {filter}");
+        debug!("protocol filter: removed {filter}");
         app.active_filter.remove(idx);
     } else {
         debug!("protocol filter: added {filter}");
