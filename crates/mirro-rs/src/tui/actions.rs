@@ -15,11 +15,12 @@ pub enum Action {
     FilterSyncing,
     ViewSortAlphabetically,
     ViewSortMirrorCount,
+    ToggleSelect,
 }
 
 impl Action {
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 11] = [
+        static ACTIONS: [Action; 12] = [
             Action::Quit,
             Action::ClosePopUp,
             Action::ShowInput,
@@ -31,6 +32,7 @@ impl Action {
             Action::FilterSyncing,
             Action::ViewSortMirrorCount,
             Action::ViewSortAlphabetically,
+            Action::ToggleSelect,
         ];
         ACTIONS.iter()
     }
@@ -48,6 +50,7 @@ impl Action {
             Action::FilterSyncing => &[Key::Ctrl('o')],
             Action::ViewSortAlphabetically => &[Key::Char('1')],
             Action::ViewSortMirrorCount => &[Key::Char('2')],
+            Action::ToggleSelect => &[Key::Char(' ')],
         }
     }
 }
@@ -64,8 +67,9 @@ impl Display for Action {
             Action::FilterHttp => "toggle http",
             Action::FilterRsync => "toggle rsync",
             Action::FilterSyncing => "toggle in-sync",
-            Action::ViewSortAlphabetically => "sort A-Z",
-            Action::ViewSortMirrorCount => "sort mirrors",
+            Action::ViewSortAlphabetically => "sort [country] A-Z",
+            Action::ViewSortMirrorCount => "sort [country] mirrors",
+            Action::ToggleSelect => "[de]select mirror",
         };
         write!(f, "{str}")
     }

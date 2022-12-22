@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
@@ -36,4 +38,18 @@ pub enum Protocol {
     Rsync,
     Http,
     Https,
+}
+
+impl Display for Protocol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Protocol::Rsync => "rsync",
+                Protocol::Http => "http",
+                Protocol::Https => "https",
+            }
+        )
+    }
 }

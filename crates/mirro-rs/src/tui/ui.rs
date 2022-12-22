@@ -28,7 +28,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &mut App) {
 
     let body_chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(20), Constraint::Length(40)].as_ref())
+        .constraints([Constraint::Min(20), Constraint::Length(60)].as_ref())
         .split(chunks[0]);
 
     {
@@ -41,7 +41,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &mut App) {
         let help = draw_help(&app.actions);
         f.render_widget(help, sidebar[1]);
 
-        f.render_widget(draw_selection(), sidebar[0]);
+        f.render_widget(draw_selection(app), sidebar[0]);
 
         match app.show_input {
             true => {
@@ -279,8 +279,57 @@ fn draw_filter(app: &App) -> Paragraph {
     Paragraph::new(app.input.as_ref()).block(create_block("Filter"))
 }
 
-fn draw_selection<'a>() -> Block<'a> {
-    create_block("Selection")
+fn draw_selection<'a>(app: &App) -> Table<'a> {
+    let header_cells = ["code", "proto", "comp", "delay", "dur", "std_dev"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default()));
+    let headers = Row::new(header_cells);
+
+    let items = app.selected_mirrors.iter().map(|f| {
+        let delay = match f.delay {
+            Some(d) => d.to_string(),
+            None => "-".to_string(),
+        };
+
+        let dur = match f.duration_avg {
+            Some(d) => d.to_string(),
+            None => "-".to_string(),
+        };
+
+        let std_dev = match f.duration_stddev {
+            Some(d) => d.to_string(),
+            None => "-".to_string(),
+        };
+
+        Row::new(vec![
+            Cell::from(f.country_code.to_string()),
+            Cell::from(f.protocol.to_string()),
+            Cell::from(f.completion_pct.to_string()),
+            Cell::from(delay),
+            Cell::from(dur),
+            Cell::from(std_dev),
+        ])
+    });
+
+    let t = Table::new(items)
+        // You can set the style of the entire Table.
+        .style(Style::default().fg(Color::White))
+        // It has an optional header, which is simply a Row always visible at the top.
+        .header(headers)
+        // As any other widget, a Table can be wrapped in a Block.
+        .block(create_block("Selection"))
+        // Columns widths are constrained in the same way as Layout...
+        .widths(&[
+            Constraint::Percentage(16),
+            Constraint::Percentage(16),
+            Constraint::Percentage(16),
+            Constraint::Percentage(16),
+            Constraint::Percentage(16),
+            Constraint::Percentage(20),
+        ]);
+    // ...and they can be separated by a fixed spacing.
+
+    t
 }
 
 fn draw_sort<'a>(app: &App) -> Paragraph<'a> {

@@ -1,7 +1,9 @@
 #[cfg(feature = "archlinux")]
-use archlinux::ArchLinux;
+use archlinux::{
+    ArchLinux, {DateTime, Protocol, Utc},
+};
 
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
 use unicode_width::UnicodeWidthStr;
 
 use crate::tui::actions::Action;
@@ -32,6 +34,17 @@ pub struct App {
     pub active_filter: Vec<Filter>,
     pub scroll_pos: isize,
     pub filtered_count: usize,
+    pub selected_mirrors: Vec<SelectedMirror>,
+}
+
+pub struct SelectedMirror {
+    pub country_code: String,
+    pub protocol: Protocol,
+    pub completion_pct: f32,
+    pub delay: Option<i64>,
+    pub duration_avg: Option<f64>,
+    pub duration_stddev: Option<f64>,
+    pub last_sync: Option<DateTime<Utc>>,
 }
 
 impl App {
@@ -49,12 +62,12 @@ impl App {
             active_filter: vec![Filter::Https, Filter::Http],
             scroll_pos: 0,
             filtered_count: 0,
+            selected_mirrors: vec![],
         }
     }
 
     pub async fn dispatch_action(&mut self, key: Key) -> AppReturn {
         if let Some(action) = self.actions.find(key) {
-            //debug!("action: [{action:?}]");
             if key.is_exit() && !self.show_input {
                 AppReturn::Exit
             } else if self.show_input {
@@ -104,6 +117,10 @@ impl App {
                     Action::FilterSyncing => insert_filter(self, Filter::InSync),
                     Action::ViewSortAlphabetically => insert_sort(self, ViewSort::Alphabetical),
                     Action::ViewSortMirrorCount => insert_sort(self, ViewSort::MirrorCount),
+                    Action::ToggleSelect => {
+                        info!("mirror selected");
+                        AppReturn::Continue
+                    }
                 }
             }
         } else {
@@ -185,6 +202,7 @@ impl App {
             Action::FilterSyncing,
             Action::ViewSortAlphabetically,
             Action::ViewSortMirrorCount,
+            Action::ToggleSelect,
         ]
         .into();
         if let Some(mirrors) = self.mirrors.as_ref() {
