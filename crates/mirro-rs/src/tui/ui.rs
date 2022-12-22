@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 #[cfg(feature = "archlinux")]
 use archlinux::{DateTime, Mirror, Protocol, Utc};
 
@@ -239,34 +237,60 @@ fn draw_filter(app: &App) -> Paragraph {
 }
 
 fn draw_selection<'a>(app: &App) -> Table<'a> {
-    let header_cells = ["code", "proto", "comp", "delay", "dur", "std_dev"]
+    let header_cells = ["code", "proto", "comp %", "delay", "dur", "std_dev"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
     let headers = Row::new(header_cells);
 
+    let err = -999.0;
+
     let items = app.selected_mirrors.iter().map(|f| {
         let delay = match f.delay {
             Some(d) => format_float(d),
-            None => "-".to_string(),
+            None => err,
         };
 
         let dur = match f.duration_avg {
             Some(d) => format_float(d),
-            None => "-".to_string(),
+            None => err,
         };
 
         let std_dev = match f.duration_stddev {
             Some(d) => format_float(d),
-            None => "-".to_string(),
+            None => err,
         };
+
+        let completion = f.completion_pct;
 
         Row::new(vec![
             Cell::from(f.country_code.to_string()),
             Cell::from(f.protocol.to_string()),
-            Cell::from(format_float(f.completion_pct)),
-            Cell::from(delay),
-            Cell::from(dur),
-            Cell::from(std_dev),
+            Cell::from(format!("{:.2}", (completion * 100.0))).style(if completion == 1.0 {
+                Style::default().fg(Color::Green)
+            } else if completion > 0.90 {
+                Style::default().fg(Color::LightCyan)
+            } else if completion > 0.80 {
+                Style::default().fg(Color::Cyan)
+            } else if completion > 0.70 {
+                Style::default()
+                    .fg(Color::LightYellow)
+                    .add_modifier(Modifier::SLOW_BLINK)
+            } else if completion > 0.60 {
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::SLOW_BLINK)
+            } else if completion > 0.50 {
+                Style::default()
+                    .fg(Color::LightRed)
+                    .add_modifier(Modifier::SLOW_BLINK)
+            } else {
+                Style::default()
+                    .fg(Color::Red)
+                    .add_modifier(Modifier::SLOW_BLINK)
+            }),
+            Cell::from(delay.to_string()),
+            Cell::from(dur.to_string()),
+            Cell::from(std_dev.to_string()),
         ])
     });
 
@@ -366,8 +390,11 @@ pub fn protocol_mapper(protocol: Protocol) -> Filter {
     }
 }
 
-fn format_float<T: Copy + Display>(str: T) -> String {
-    format!("{str:.2}")
+fn format_float(str: impl ToString) -> f32 {
+    match str.to_string().parse::<f32>() {
+        Ok(res) => (res * 100.0).round() / 100.0,
+        Err(_) => -999.0,
+    }
 }
 
 pub fn filter_result(app: &App, last_check: &DateTime<Utc>, f: &Mirror) -> bool {
