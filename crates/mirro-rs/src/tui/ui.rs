@@ -14,7 +14,7 @@ use tui_logger::TuiLoggerWidget;
 
 use super::{
     actions::{Action, Actions},
-    dispatch::filter::Filter,
+    dispatch::{filter::Filter, sort::ViewSort},
     state::App,
 };
 
@@ -86,7 +86,7 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
 
-    let items: Vec<_> = if let Some(items) = app.mirrors.as_ref() {
+    let items: Vec<_> = if let Some(items) = app.mirrors.as_mut() {
         items
             .countries
             .iter()
@@ -120,6 +120,17 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                     None
                 }
             })
+            .sorted_by_key(|(f, count)| {
+                if app.active_sort.contains(&ViewSort::Alphabetical)
+                    && app.active_sort.contains(&ViewSort::MirrorCount)
+                {
+                    (f.name.clone(), *count)
+                } else if app.active_sort.contains(&ViewSort::MirrorCount) {
+                    (String::default(), *count)
+                } else {
+                    (f.name.clone(), 0)
+                }
+            })
             .enumerate()
             .map(|(idx, (f, count))| {
                 let mut selected = false;
@@ -144,7 +155,7 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                             .add_modifier(Modifier::BOLD)
                             .fg(Color::Green)
                     } else {
-                        Style::default()
+                        Style::default().fg(Color::Gray)
                     })
                 }));
             })

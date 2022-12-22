@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[allow(dead_code)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum ViewSort {
     Alphabetical,
     MirrorCount,
@@ -9,14 +9,15 @@ pub enum ViewSort {
 impl Display for ViewSort {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            ViewSort::Alphabetical => "a",
-            ViewSort::MirrorCount => "c",
+            ViewSort::Alphabetical => "A",
+            ViewSort::MirrorCount => "1",
         };
         write!(f, "{str}")
     }
 }
 
 #[allow(dead_code)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum ExportSort {
     Completion,
     MirroringDelay,

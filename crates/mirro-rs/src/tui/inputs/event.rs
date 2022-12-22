@@ -6,6 +6,8 @@ use std::{
     time::Duration,
 };
 
+use log::error;
+
 use super::key::Key;
 use super::InputEvent;
 
@@ -34,12 +36,12 @@ impl Events {
                     if let crossterm::event::Event::Key(key) = crossterm::event::read().unwrap() {
                         let key = Key::from(key);
                         if let Err(err) = event_tx.send(InputEvent::Input(key)).await {
-                            eprintln!("Oops!, {err}");
+                            error!("{err}");
                         }
                     }
                 }
                 if let Err(err) = event_tx.send(InputEvent::Tick).await {
-                    eprintln!("Oops!, {err}");
+                    error!("{err}");
                 }
                 if event_stop_capture.load(Ordering::Relaxed) {
                     break;

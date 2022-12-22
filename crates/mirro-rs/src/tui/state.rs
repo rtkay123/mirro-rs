@@ -45,7 +45,7 @@ impl App {
             io_tx,
             input: String::default(),
             input_cursor_position: 0,
-            active_sort: vec![ViewSort::Alphabetical, ViewSort::MirrorCount],
+            active_sort: vec![ViewSort::Alphabetical],
             active_filter: vec![Filter::Https, Filter::Http],
             scroll_pos: 0,
             filtered_count: 0,
@@ -55,7 +55,7 @@ impl App {
     pub async fn dispatch_action(&mut self, key: Key) -> AppReturn {
         if let Some(action) = self.actions.find(key) {
             //debug!("action: [{action:?}]");
-            if key.is_exit() {
+            if key.is_exit() && !self.show_input {
                 AppReturn::Exit
             } else if self.show_input {
                 match action {
@@ -74,6 +74,8 @@ impl App {
                             insert_character(self, 'j');
                         }
                     }
+                    Action::ViewSortAlphabetically => insert_character(self, '1'),
+                    Action::ViewSortMirrorCount => insert_character(self, '2'),
                     _ => {}
                 }
                 AppReturn::Continue
@@ -100,6 +102,8 @@ impl App {
                     Action::FilterHttp => insert_filter(self, Filter::Http),
                     Action::FilterRsync => insert_filter(self, Filter::Rsync),
                     Action::FilterSyncing => insert_filter(self, Filter::InSync),
+                    Action::ViewSortAlphabetically => insert_sort(self, ViewSort::Alphabetical),
+                    Action::ViewSortMirrorCount => insert_sort(self, ViewSort::MirrorCount),
                 }
             }
         } else {
@@ -179,6 +183,8 @@ impl App {
             Action::FilterHttps,
             Action::FilterRsync,
             Action::FilterSyncing,
+            Action::ViewSortAlphabetically,
+            Action::ViewSortMirrorCount,
         ]
         .into();
         if let Some(mirrors) = self.mirrors.as_ref() {
@@ -218,5 +224,11 @@ fn insert_filter(app: &mut App, filter: Filter) -> AppReturn {
         app.active_filter.push(filter);
     }
     app.scroll_pos = 0;
+    AppReturn::Continue
+}
+
+fn insert_sort(app: &mut App, view: ViewSort) -> AppReturn {
+    app.active_sort.clear();
+    app.active_sort.push(view);
     AppReturn::Continue
 }
