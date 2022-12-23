@@ -426,7 +426,8 @@ pub fn filter_result(app: &App, last_check: &DateTime<Utc>, f: &Mirror) -> bool 
     if config.filters.contains(&Filter::InSync) {
         if let Some(mirror_sync) = f.last_sync {
             let duration = *last_check - mirror_sync;
-            duration.num_hours() <= 24 && config.filters.contains(&protocol_mapper(f.protocol))
+            duration.num_hours() <= config.ttl.into()
+                && config.filters.contains(&protocol_mapper(f.protocol))
         } else {
             false
         }

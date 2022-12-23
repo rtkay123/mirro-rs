@@ -43,6 +43,11 @@ pub struct Args {
     #[serde(rename = "cache-ttl")]
     #[serde(default = "default_ttl")]
     pub ttl: Option<u16>,
+
+    /// URL to check for mirrors
+    #[arg(short, long)]
+    #[serde(default = "url")]
+    pub url: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
@@ -52,6 +57,10 @@ pub enum SelectionSort {
     Delay,
     Duration,
     Score,
+}
+
+fn url() -> Option<String> {
+    Some("https://archlinux.org/mirrors/status/json/".to_string())
 }
 
 fn default_ttl() -> Option<u16> {

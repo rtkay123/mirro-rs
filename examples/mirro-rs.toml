@@ -6,17 +6,6 @@ outfile = "/home/user/example/generated-mirrors"
 # Max number of mirrors to export
 export = 50
 
-# Filters to apply on returned mirrorlists
-#
-# Values for `filters`
-#     - https: Enable https protocol
-#     - http: Enable https protocol
-#     - rsync: Enable rsync protocol
-#     - in-sync: Mirrors have been synced in the last 24 hours
-filters = [
-  "https",
-]
-
 # How to sort the returned data
 #
 # Values for `view`
@@ -41,4 +30,20 @@ countries = [ ]
 
 # Number of hours to cache mirrorlist for
 #
+# Also used as the number of hours to determine in-sync mirrors when `in-sync` filter is applied
 cache-ttl = 24
+
+# Filters to apply on returned mirrorlists
+#
+# Values for `filters`
+#     - https: Enable https protocol
+#     - http: Enable https protocol
+#     - rsync: Enable rsync protocol
+#     - in-sync: Mirrors have been synced in the last `cache-ttl` hours
+filters = [
+  "https",
+]
+
+# A source to check for mirrors
+#
+url = ""

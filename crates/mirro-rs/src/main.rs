@@ -6,8 +6,7 @@ mod tui;
 async fn main() {
     let args = <cli::Args as clap::Parser>::parse();
 
-    let config = include_str!("../../../examples/mirro-rs.toml");
-    let config: cli::Args = toml::from_str(config).unwrap();
+    let (config, _file) = config::read_config_file();
 
     if !check_outfile(&args) && !check_outfile(&config) {
         exit();
@@ -20,8 +19,10 @@ async fn main() {
     let sort = args.sort.unwrap_or_else(|| config.sort.unwrap());
     let countries = args.country.unwrap_or_else(|| config.country.unwrap());
     let ttl = args.ttl.unwrap_or_else(|| config.ttl.unwrap());
+    let url = args.url.unwrap_or_else(|| config.url.unwrap());
 
-    let config = config::Configuration::new(outfile, export, filters, view, sort, countries, ttl);
+    let config =
+        config::Configuration::new(outfile, export, filters, view, sort, countries, ttl, url);
 
     let _ = tui::start(config).await;
 }

@@ -11,6 +11,7 @@ anyhow = "1.0.68"
 archlinux = { version = "0.1.0", path = "../archlinux", optional = true }
 clap = { version = "4.0.32", features = ["derive"] }
 crossterm = "0.25.0"
+dirs = "4.0.0"
 itertools = "0.10.5"
 log = "0.4.17"
 serde = { version = "1.0.151", features = ["derive"] }

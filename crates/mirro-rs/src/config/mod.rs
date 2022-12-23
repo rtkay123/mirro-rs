@@ -1,3 +1,6 @@
+mod file;
+pub use file::read_config_file;
+
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -19,9 +22,11 @@ pub struct Configuration {
     pub sort: ExportSort,
     pub country: Vec<String>,
     pub ttl: u16,
+    pub url: String,
 }
 
 impl Configuration {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         outfile: PathBuf,
         export: u16,
@@ -30,6 +35,7 @@ impl Configuration {
         sort: SelectionSort,
         country: Vec<String>,
         ttl: u16,
+        url: String,
     ) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             outfile,
@@ -44,6 +50,7 @@ impl Configuration {
             },
             country,
             ttl,
+            url,
         }))
     }
 }
