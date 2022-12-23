@@ -2,7 +2,9 @@ use super::Result;
 use hyper::{body::Buf, Body, Client, Request, StatusCode, Uri};
 use hyper_tls::HttpsConnector;
 
-use crate::{response::external::Root, ARCHLINUX_MIRRORS, LOCAL_SOURCE};
+use crate::{response::external::Root, ARCHLINUX_MIRRORS};
+
+const LOCAL_SOURCE: &str = include_str!("../sample/archlinux.json");
 
 async fn response() -> Result<hyper::Response<Body>> {
     let client = Client::builder().build::<_, Body>(HttpsConnector::new());

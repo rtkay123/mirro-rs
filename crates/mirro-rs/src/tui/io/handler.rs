@@ -14,7 +14,6 @@ use crate::{config::Configuration, tui::state::App};
 use super::IoEvent;
 
 const CACHE_FILE: &str = "cache";
-//const LOCAL_SOURCE: &str = include_str!("../sample/archlinux.json");
 
 pub struct IoAsyncHandler {
     app: Arc<Mutex<App>>,
