@@ -20,11 +20,12 @@ pub enum Action {
     SelectionSortDelay,
     SelectionSortDuration,
     SelectionSortScore,
+    Export,
 }
 
 impl Action {
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 16] = [
+        static ACTIONS: [Action; 17] = [
             Action::Quit,
             Action::ClosePopUp,
             Action::ShowInput,
@@ -41,6 +42,7 @@ impl Action {
             Action::SelectionSortDelay,
             Action::SelectionSortDuration,
             Action::SelectionSortScore,
+            Action::Export,
         ];
         ACTIONS.iter()
     }
@@ -63,6 +65,7 @@ impl Action {
             Action::SelectionSortDelay => &[Key::Char('6')],
             Action::SelectionSortDuration => &[Key::Char('7')],
             Action::SelectionSortScore => &[Key::Char('8')],
+            Action::Export => &[Key::Ctrl('e')],
         }
     }
 }
@@ -86,6 +89,7 @@ impl Display for Action {
             Action::SelectionSortDelay => "sort [selection] delay",
             Action::SelectionSortDuration => "sort [selection] duration",
             Action::SelectionSortScore => "sort [selection] score",
+            Action::Export => "export mirrors",
         };
         write!(f, "{str}")
     }

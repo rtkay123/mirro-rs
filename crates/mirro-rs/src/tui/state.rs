@@ -2,7 +2,10 @@
 use archlinux::{
     ArchLinux, Country, {DateTime, Protocol, Utc},
 };
-use std::sync::{Arc, Mutex};
+use std::{
+    io::Write,
+    sync::{Arc, Mutex},
+};
 
 use crate::config::Configuration;
 
@@ -44,6 +47,7 @@ pub struct App {
     pub selected_mirrors: Vec<SelectedMirror>,
     pub table_viewport_height: u16,
     pub configuration: Arc<Mutex<Configuration>>,
+    pub popup_text: String,
 }
 
 #[derive(Debug, Clone)]
@@ -55,6 +59,7 @@ pub struct SelectedMirror {
     pub score: Option<f64>,
     pub duration_stddev: Option<f64>,
     pub last_sync: Option<DateTime<Utc>>,
+    pub url: String,
 }
 
 impl App {
@@ -76,6 +81,7 @@ impl App {
             table_viewport_height: 0,
             selected_mirrors: vec![],
             filtered_countries: vec![],
+            popup_text: String::from("Getting preparing your mirrorlist. Please wait..."),
         }
     }
 
@@ -108,7 +114,8 @@ impl App {
             } else {
                 match action {
                     Action::ClosePopUp => {
-                        self.show_popup = !self.show_popup;
+                        // self.show_popup = !self.show_popup;
+                        self.show_popup = false;
                         AppReturn::Continue
                     }
                     Action::Quit => AppReturn::Continue,
@@ -161,6 +168,48 @@ impl App {
                             let b = b.duration_stddev.unwrap_or(f64::MAX);
                             a.partial_cmp(&b).unwrap()
                         });
+                        AppReturn::Continue
+                    }
+                    Action::Export => {
+                        if self.selected_mirrors.is_empty() {
+                            warn!("You haven't selected any mirrors yet");
+                        } else {
+                            let config = self.configuration.lock().unwrap();
+                            let outfile = &config.outfile;
+                            if let Some(dir) = outfile.parent() {
+                                if std::fs::create_dir_all(dir).is_ok() {
+                                    let count = config.export as usize;
+                                    let output =
+                                        &self.selected_mirrors[if self.selected_mirrors.len()
+                                            >= count
+                                        {
+                                            ..count
+                                        } else {
+                                            ..self.selected_mirrors.len()
+                                        }];
+                                    match std::fs::OpenOptions::new()
+                                        .write(true)
+                                        .create(true)
+                                        .open(outfile)
+                                    {
+                                        Ok(mut file) => {
+                                            for i in output.iter() {
+                                                if let Err(e) =
+                                                    writeln!(file, "{} {:?}", i.url, i.score)
+                                                {
+                                                    error!("{e}");
+                                                }
+                                            }
+                                            self.popup_text = format!("Your mirrorlist has been successfully exported to: {}",outfile.display());
+                                            self.show_popup = true;
+                                        }
+                                        Err(e) => {
+                                            panic!("{e}");
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         AppReturn::Continue
                     }
                 }
@@ -250,6 +299,7 @@ impl App {
             Action::SelectionSortDelay,
             Action::SelectionSortDuration,
             Action::SelectionSortScore,
+            Action::Export,
         ]
         .into();
         self.show_popup = false;
@@ -349,6 +399,7 @@ impl App {
                     score: f.score,
                     duration_stddev: f.duration_stddev,
                     last_sync: f.last_sync,
+                    url: f.url.to_string(),
                 })
                 .collect_vec();
 

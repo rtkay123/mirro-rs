@@ -74,7 +74,7 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &mut App) {
         let block = Block::default()
             .borders(Borders::ALL)
             .style(Style::default().bg(Color::Black));
-        let p = Paragraph::new("Preparing mirrors. Please wait...")
+        let p = Paragraph::new(app.popup_text.clone())
             .block(block)
             .alignment(Alignment::Center);
         let area = centered_rect(60, 20, area);
@@ -96,18 +96,7 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                 let count = f
                     .mirrors
                     .iter()
-                    .filter(|m| {
-                        // let config = app.configuration.lock().unwrap();
-                        // if config.country.is_empty() {
-                        filter_result(app, &items.last_check, m)
-                        // } else {
-                        //     config
-                        //         .country
-                        //         .iter()
-                        //         .any(|n| n.eq_ignore_ascii_case(&f.name))
-                        //         && filter_result(app, &items.last_check, m)
-                        // }
-                    })
+                    .filter(|m| filter_result(app, &items.last_check, m))
                     .count();
                 if count == 0 {
                     None
@@ -246,7 +235,7 @@ fn draw_filter(app: &App) -> Paragraph {
 }
 
 fn draw_selection<'a>(app: &App) -> Table<'a> {
-    let header_cells = ["code", "proto", "comp %", "delay", "score", "dur"]
+    let header_cells = ["code", "proto", "comp %", "delay", "dur", "score"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
     let headers = Row::new(header_cells);
@@ -308,16 +297,19 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
                 None => Style::default(),
             }),
             Cell::from(
+                dur.map(|f| f.to_string())
+                    .unwrap_or_else(|| "-".to_string()),
+            ),
+            Cell::from(
                 score
                     .map(|f| f.to_string())
                     .unwrap_or_else(|| "-".to_string()),
             ),
-            Cell::from(
-                dur.map(|f| f.to_string())
-                    .unwrap_or_else(|| "-".to_string()),
-            ),
         ])
     });
+
+    let mirror_count = app.selected_mirrors.len();
+    let config = app.configuration.lock().unwrap();
 
     let t = Table::new(items)
         // You can set the style of the entire Table.
@@ -325,10 +317,20 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
         // It has an optional header, which is simply a Row always visible at the top.
         .header(headers)
         // As any other widget, a Table can be wrapped in a Block.
-        .block(create_block(format!(
-            "Selection ({})",
-            app.selected_mirrors.len()
-        )))
+        .block(create_block(if mirror_count < 1 {
+            format!("Selection({}) ", mirror_count)
+        } else {
+            format!(
+                "Selection({})▶ ({}) to {}",
+                mirror_count,
+                if config.export as usize <= mirror_count {
+                    config.export.to_string()
+                } else {
+                    "ALL".to_string()
+                },
+                config.outfile.display()
+            )
+        }))
         // Columns widths are constrained in the same way as Layout...
         .widths(&[
             Constraint::Percentage(16),
@@ -345,7 +347,7 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
 
 fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
     let config = app.configuration.lock().unwrap();
-    let count = config.filters.len() + 1;
+    let count: isize = config.filters.len() as isize;
     let active_sort = vec![config.view];
     let mut sorts: Vec<_> = active_sort
         .iter()
@@ -355,7 +357,7 @@ fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
                 Span::raw(format!(" [{f}]")),
                 Span::styled(" ⇣", Style::default()),
             ];
-            if idx < count - 1 {
+            if (idx as isize) < count - 1 {
                 ret.push(Span::styled(" 🢒", Style::default().fg(Color::Black)))
             }
             ret
@@ -376,7 +378,7 @@ fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
                     })
                     .add_modifier(Modifier::BOLD),
             )];
-            if idx < count - 1 {
+            if (idx as isize) < count - 1 {
                 ret.push(Span::styled(" 🢒", Style::default().fg(Color::Black)))
             }
             ret
@@ -387,7 +389,7 @@ fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
 
     let widget = Spans::from(sorts);
 
-    let bt = format!("Sort ({count}) {}", config.outfile.display());
+    let bt = format!("Sort ({count})");
 
     Paragraph::new(widget).block(create_block(bt))
 }
