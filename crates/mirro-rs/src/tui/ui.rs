@@ -387,7 +387,7 @@ fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
 
     let widget = Spans::from(sorts);
 
-    let bt = format!("Sort ({count})");
+    let bt = format!("Sort ({count}) {}", config.outfile.display());
 
     Paragraph::new(widget).block(create_block(bt))
 }

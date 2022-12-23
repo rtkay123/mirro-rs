@@ -33,7 +33,7 @@ pub struct Args {
     pub sort: Option<SelectionSort>,
 
     /// Countries to search for mirrorlists
-    #[arg(short, long)]
+    #[arg(short)]
     #[serde(rename = "countries")]
     #[serde(default = "opt_vec")]
     pub country: Option<Vec<String>>,
@@ -48,6 +48,24 @@ pub struct Args {
     #[arg(short, long)]
     #[serde(default = "url")]
     pub url: Option<String>,
+
+    /// Specify alternate configuration file [default: $XDG_CONFIG_HOME/mirro-rs/mirro-rs.toml]
+    #[arg(long)]
+    #[serde(default = "configuration_dir")]
+    #[cfg(feature = "toml")]
+    pub config: Option<PathBuf>,
+
+    /// Specify alternate configuration file [default: $XDG_CONFIG_HOME/mirro-rs/mirro-rs.json]
+    #[arg(long)]
+    #[serde(default = "configuration_dir")]
+    #[cfg(feature = "json")]
+    pub config: Option<PathBuf>,
+
+    /// Specify alternate configuration file [default: $XDG_CONFIG_HOME/mirro-rs/mirro-rs.yaml]
+    #[arg(long)]
+    #[serde(default = "configuration_dir")]
+    #[cfg(feature = "yaml")]
+    pub config: Option<PathBuf>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
@@ -57,6 +75,10 @@ pub enum SelectionSort {
     Delay,
     Duration,
     Score,
+}
+
+fn configuration_dir() -> Option<PathBuf> {
+    None
 }
 
 fn url() -> Option<String> {

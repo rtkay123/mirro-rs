@@ -1,3 +1,7 @@
+use std::sync::{Arc, Mutex};
+
+use self::config::watch_config;
+
 mod cli;
 mod config;
 mod tui;
@@ -6,7 +10,7 @@ mod tui;
 async fn main() {
     let args = <cli::Args as clap::Parser>::parse();
 
-    let (config, _file) = config::read_config_file();
+    let (config, file) = config::read_config_file(args.config.clone());
 
     if !check_outfile(&args) && !check_outfile(&config) {
         exit();
@@ -24,7 +28,12 @@ async fn main() {
     let config =
         config::Configuration::new(outfile, export, filters, view, sort, countries, ttl, url);
 
+    let config = Arc::new(Mutex::new(config));
+
+    watch_config(file, Arc::clone(&config));
+
     let _ = tui::start(config).await;
+    std::process::exit(0);
 }
 
 fn exit() -> ! {

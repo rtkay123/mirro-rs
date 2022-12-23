@@ -1,10 +1,11 @@
 mod file;
+mod watch;
+
+pub use watch::watch_config;
+
 pub use file::read_config_file;
 
-use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::path::PathBuf;
 
 use crate::{
     cli::SelectionSort,
@@ -36,8 +37,8 @@ impl Configuration {
         country: Vec<String>,
         ttl: u16,
         url: String,
-    ) -> Arc<Mutex<Self>> {
-        Arc::new(Mutex::new(Self {
+    ) -> Self {
+        Self {
             outfile,
             export,
             filters,
@@ -51,6 +52,6 @@ impl Configuration {
             country,
             ttl,
             url,
-        }))
+        }
     }
 }

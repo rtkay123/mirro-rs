@@ -1,41 +1,50 @@
-use std::{fmt::Display, io::ErrorKind, path::PathBuf};
+use std::{
+    fmt::Display,
+    io::ErrorKind,
+    path::{Path, PathBuf},
+};
 
 use crate::cli::Args;
 
-pub fn read_config_file() -> (Args, Option<PathBuf>) {
-    let config_file = dirs::config_dir().map(|dir| {
-        let is_yaml = extension() == Config::Yaml;
-        match get_config(dir.clone(), &extension().to_string()) {
-            Some(res) => Some(res),
-            None => {
-                if is_yaml {
-                    get_config(dir, "yml")
-                } else {
-                    None
+pub fn read_config_file(file: Option<impl AsRef<Path>>) -> (Args, Option<PathBuf>) {
+    let config_file = if let Some(ref file) = file {
+        let buf = file.as_ref().to_path_buf();
+        Some(check_file(&buf, None))
+    } else {
+        dirs::config_dir().map(|dir| {
+            let is_yaml = extension() == Config::Yaml;
+            match get_config(dir.clone(), &extension().to_string()) {
+                Some(res) => Some(res),
+                None => {
+                    if is_yaml {
+                        get_config(dir, "yml")
+                    } else {
+                        None
+                    }
                 }
             }
-        }
-    });
+        })
+    };
     match config_file {
         Some(Some(opts)) => opts,
         #[allow(unused_variables)]
         _ => {
-            #[cfg(feature = "config-toml")]
+            #[cfg(feature = "toml")]
             let config_str = include_str!("../../../../examples/mirro-rs.toml");
 
-            #[cfg(feature = "config-yaml")]
+            #[cfg(feature = "yaml")]
             let config_str = include_str!("../../../../examples/mirro-rs.yaml");
 
-            #[cfg(feature = "config-json")]
+            #[cfg(feature = "json")]
             let config_str = include_str!("../../../../examples/mirro-rs.json");
 
-            #[cfg(feature = "config-toml")]
+            #[cfg(feature = "toml")]
             let config: Args = toml::from_str(config_str).unwrap();
 
-            #[cfg(feature = "config-json")]
+            #[cfg(feature = "json")]
             let config: Args = serde_json::from_str(config_str).unwrap();
 
-            #[cfg(feature = "config-yaml")]
+            #[cfg(feature = "yaml")]
             let config: Args = serde_yaml::from_str(config_str).unwrap();
 
             (config, None)
@@ -61,13 +70,13 @@ fn check_file(file: &PathBuf, backup: Option<&PathBuf>) -> Option<(Args, Option<
     match f {
         #[allow(unused_variables)]
         Ok(contents) => {
-            #[cfg(feature = "config-toml")]
+            #[cfg(feature = "toml")]
             let result: Result<Args, _> = toml::from_str::<Args>(&contents);
 
-            #[cfg(feature = "config-json")]
+            #[cfg(feature = "json")]
             let result: Result<Args, _> = serde_json::from_str::<Args>(&contents);
 
-            #[cfg(feature = "config-yaml")]
+            #[cfg(feature = "yaml")]
             let result: Result<Args, _> = serde_yaml::from_str::<Args>(&contents);
 
             match result {

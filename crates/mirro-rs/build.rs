@@ -12,4 +12,4 @@ macro_rules! assert_unique_feature {
     }
 }
 
-// assert_unique_feature!("config-json", "config-yaml", "config-toml");
+// assert_unique_feature!("json", "yaml", "toml");
