@@ -1,6 +1,10 @@
 use std::fmt::Display;
 
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+use clap::ValueEnum;
+use serde::Deserialize;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum ViewSort {
     Alphabetical,
     MirrorCount,
@@ -21,7 +25,7 @@ impl Display for ViewSort {
 pub enum ExportSort {
     Completion,
     MirroringDelay,
-    StandardDeviation,
+    Duration,
     Score,
 }
 
@@ -30,7 +34,7 @@ impl Display for ExportSort {
         let str = match self {
             ExportSort::Completion => "%",
             ExportSort::MirroringDelay => "μ",
-            ExportSort::StandardDeviation => "σ",
+            ExportSort::Duration => "σ",
             ExportSort::Score => "~",
         };
         write!(f, "{str}")

@@ -1,5 +1,5 @@
 mod actions;
-mod dispatch;
+pub mod dispatch;
 mod inputs;
 mod io;
 mod state;
@@ -18,6 +18,8 @@ use tokio::sync::Mutex;
 
 use tui::{backend::CrosstermBackend, Terminal};
 
+use crate::config::Configuration;
+
 use self::{
     inputs::{event::Events, InputEvent},
     io::{handler::IoAsyncHandler, IoEvent},
@@ -25,7 +27,7 @@ use self::{
     ui::ui,
 };
 
-pub async fn start() -> Result<()> {
+pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
 
@@ -34,7 +36,7 @@ pub async fn start() -> Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     let (sync_io_tx, mut sync_io_rx) = tokio::sync::mpsc::channel::<IoEvent>(100);
-    let app = Arc::new(Mutex::new(App::new(sync_io_tx)));
+    let app = Arc::new(Mutex::new(App::new(sync_io_tx, Arc::clone(&configuration))));
     let inner = Arc::clone(&app);
 
     tui_logger::init_logger(LevelFilter::Trace).unwrap();
@@ -44,7 +46,9 @@ pub async fn start() -> Result<()> {
         let mut handler = IoAsyncHandler::new(inner);
         while let Some(io_event) = sync_io_rx.recv().await {
             debug!("Getting Arch Linux mirrors. Please wait");
-            handler.handle_io_event(io_event).await;
+            handler
+                .handle_io_event(io_event, Arc::clone(&configuration))
+                .await;
         }
     });
 

@@ -9,10 +9,13 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 anyhow = "1.0.68"
 archlinux = { version = "0.1.0", path = "../archlinux", optional = true }
+clap = { version = "4.0.32", features = ["derive"] }
 crossterm = "0.25.0"
 itertools = "0.10.5"
 log = "0.4.17"
+serde = { version = "1.0.151", features = ["derive"] }
 tokio = { version = "1.23.0", features = ["rt-multi-thread", "macros"] }
+toml = "0.5.10"
 tui = "0.19.0"
 tui-logger = "0.8.1"
 unicode-width = "0.1.10"

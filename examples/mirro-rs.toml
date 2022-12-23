@@ -1,0 +1,44 @@
+# File to export mirrorlist to
+#
+# The file MUST NOT end with a trailing slash 
+outfile = "/home/user/example/generated-mirrors"
+
+# Max number of mirrors to export
+export = 50
+
+# Filters to apply on returned mirrorlists
+#
+# Values for `filters`
+#     - https: Enable https protocol
+#     - http: Enable https protocol
+#     - rsync: Enable rsync protocol
+#     - in-sync: Mirrors have been synced in the last 24 hours
+filters = [
+  "https",
+]
+
+# How to sort the returned data
+#
+# Values for `view`
+#     - alphabetical
+#     - mirror-count
+view = "alphabetical"
+
+
+# How to sort exported mirrors
+#
+# Values for `sort`
+#     - percentage: The number of mirror checks that have successfully connected and disconnected from the given URL
+#     - duration: The standard deviation of the connect and retrieval time
+#     - delay: The mean value of last check − last sync for each check of this mirror URL
+#     - score: Calculated as (hours delay + average duration + standard deviation) / completion percentage. Lower is better.
+sort = "score"
+
+# Countries to return
+#
+# A list of countries to be checked. If left empty, all available countries are presented
+countries = [ ]
+
+# Number of hours to cache mirrorlist for
+#
+cache-ttl = 24

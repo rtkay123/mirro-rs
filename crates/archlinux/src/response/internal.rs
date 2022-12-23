@@ -28,7 +28,7 @@ pub struct Mirror {
     pub protocol: Protocol,
     pub completion_pct: f32,
     pub delay: Option<i64>,
-    pub duration_avg: Option<f64>,
+    pub score: Option<f64>,
     pub duration_stddev: Option<f64>,
     pub last_sync: Option<DateTime<Utc>>,
 }
@@ -59,7 +59,7 @@ impl From<Root> for ArchLinux {
                             protocol: f.protocol,
                             completion_pct: f.completion_pct,
                             delay: f.delay,
-                            duration_avg: f.duration_avg,
+                            score: f.score,
                             duration_stddev: f.duration_stddev,
                             last_sync: f.last_sync,
                         })

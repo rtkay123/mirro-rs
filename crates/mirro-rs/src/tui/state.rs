@@ -2,6 +2,9 @@
 use archlinux::{
     ArchLinux, Country, {DateTime, Protocol, Utc},
 };
+use std::sync::{Arc, Mutex};
+
+use crate::config::Configuration;
 
 use itertools::Itertools;
 use log::{debug, error, info, warn};
@@ -36,12 +39,11 @@ pub struct App {
     pub input: String,
     pub input_cursor_position: usize,
     pub show_input: bool,
-    pub active_sort: Vec<ViewSort>,
-    pub active_filter: Vec<Filter>,
     pub scroll_pos: isize,
     pub filtered_countries: Vec<(Country, usize)>,
     pub selected_mirrors: Vec<SelectedMirror>,
     pub table_viewport_height: u16,
+    pub configuration: Arc<Mutex<Configuration>>,
 }
 
 #[derive(Debug, Clone)]
@@ -50,14 +52,17 @@ pub struct SelectedMirror {
     pub protocol: Protocol,
     pub completion_pct: f32,
     pub delay: Option<i64>,
-    pub duration_avg: Option<f64>,
+    pub score: Option<f64>,
     pub duration_stddev: Option<f64>,
     pub last_sync: Option<DateTime<Utc>>,
 }
 
 impl App {
     #[cfg(feature = "archlinux")]
-    pub fn new(io_tx: tokio::sync::mpsc::Sender<IoEvent>) -> Self {
+    pub fn new(
+        io_tx: tokio::sync::mpsc::Sender<IoEvent>,
+        configuration: Arc<Mutex<Configuration>>,
+    ) -> Self {
         Self {
             actions: vec![Action::Quit].into(),
             show_popup: true,
@@ -66,8 +71,7 @@ impl App {
             io_tx,
             input: String::default(),
             input_cursor_position: 0,
-            active_sort: vec![ViewSort::Alphabetical],
-            active_filter: vec![Filter::Https, Filter::Http],
+            configuration,
             scroll_pos: 0,
             table_viewport_height: 0,
             selected_mirrors: vec![],
@@ -137,24 +141,24 @@ impl App {
                     }
                     Action::SelectionSortDelay => {
                         self.selected_mirrors.sort_by(|a, b| {
-                            let a = a.delay.unwrap_or_default();
-                            let b = b.delay.unwrap_or_default();
-                            a.partial_cmp(&b).unwrap()
-                        });
-                        AppReturn::Continue
-                    }
-                    Action::SelectionSortDuration => {
-                        self.selected_mirrors.sort_by(|a, b| {
-                            let a = a.duration_avg.unwrap_or_default();
-                            let b = b.duration_avg.unwrap_or_default();
+                            let a = a.delay.unwrap_or(i64::MAX);
+                            let b = b.delay.unwrap_or(i64::MAX);
                             a.partial_cmp(&b).unwrap()
                         });
                         AppReturn::Continue
                     }
                     Action::SelectionSortScore => {
                         self.selected_mirrors.sort_by(|a, b| {
-                            let a = a.duration_stddev.unwrap_or_default();
-                            let b = b.duration_stddev.unwrap_or_default();
+                            let a = a.score.unwrap_or(f64::MAX);
+                            let b = b.score.unwrap_or(f64::MAX);
+                            a.partial_cmp(&b).unwrap()
+                        });
+                        AppReturn::Continue
+                    }
+                    Action::SelectionSortDuration => {
+                        self.selected_mirrors.sort_by(|a, b| {
+                            let a = a.duration_stddev.unwrap_or(f64::MAX);
+                            let b = b.duration_stddev.unwrap_or(f64::MAX);
                             a.partial_cmp(&b).unwrap()
                         });
                         AppReturn::Continue
@@ -342,7 +346,7 @@ impl App {
                     protocol: f.protocol,
                     completion_pct: f.completion_pct,
                     delay: f.delay,
-                    duration_avg: f.duration_avg,
+                    score: f.score,
                     duration_stddev: f.duration_stddev,
                     last_sync: f.last_sync,
                 })
@@ -377,10 +381,6 @@ impl App {
     fn fragment_number(&self) -> usize {
         (self.scroll_pos / self.table_viewport_height as isize) as usize
     }
-
-    // pub fn in_sync_only(&self) -> bool {
-    //     self.active_filter.contains(&Filter::InSync)
-    // }
 }
 
 fn insert_character(app: &mut App, key: char) {
@@ -390,19 +390,20 @@ fn insert_character(app: &mut App, key: char) {
 }
 
 fn insert_filter(app: &mut App, filter: Filter) -> AppReturn {
-    if let Some(idx) = app.active_filter.iter().position(|f| *f == filter) {
+    let mut config = app.configuration.lock().unwrap();
+    if let Some(idx) = config.filters.iter().position(|f| *f == filter) {
         debug!("protocol filter: removed {filter}");
-        app.active_filter.remove(idx);
+        config.filters.remove(idx);
     } else {
         debug!("protocol filter: added {filter}");
-        app.active_filter.push(filter);
+        config.filters.push(filter);
     }
     app.scroll_pos = 0;
     AppReturn::Continue
 }
 
 fn insert_sort(app: &mut App, view: ViewSort) -> AppReturn {
-    app.active_sort.clear();
-    app.active_sort.push(view);
+    let mut config = app.configuration.lock().unwrap();
+    config.view = view;
     AppReturn::Continue
 }

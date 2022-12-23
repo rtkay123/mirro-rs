@@ -4,7 +4,7 @@ use std::sync::Arc;
 use log::error;
 use tokio::sync::Mutex;
 
-use crate::tui::state::App;
+use crate::{config::Configuration, tui::state::App};
 
 use super::IoEvent;
 
@@ -18,8 +18,9 @@ impl IoAsyncHandler {
     }
 
     #[cfg(feature = "archlinux")]
-    pub async fn initialise(&mut self) -> Result<()> {
+    pub async fn initialise(&mut self, config: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
         use anyhow::bail;
+        use itertools::Itertools;
         // use log::info;
         // match archlinux::archlinux().await {
         //     Ok(mirrors) => {
@@ -37,8 +38,22 @@ impl IoAsyncHandler {
         //     Err(e) => {
         //         error!("{e}, trying fallback");
         match archlinux::archlinux_fallback() {
-            Ok(mirrors) => {
+            Ok(mut mirrors) => {
                 let mut app = self.app.lock().await;
+                let config = config.lock().unwrap();
+                if !config.country.is_empty() {
+                    let items = mirrors
+                        .countries
+                        .into_iter()
+                        .filter(|f| {
+                            config
+                                .country
+                                .iter()
+                                .any(|a| a.eq_ignore_ascii_case(&f.name))
+                        })
+                        .collect_vec();
+                    mirrors.countries = items;
+                }
                 app.mirrors = Some(mirrors);
             }
             Err(e) => {
@@ -49,9 +64,13 @@ impl IoAsyncHandler {
         Ok(())
     }
 
-    pub async fn handle_io_event(&mut self, io_event: IoEvent) {
+    pub async fn handle_io_event(
+        &mut self,
+        io_event: IoEvent,
+        config: Arc<std::sync::Mutex<Configuration>>,
+    ) {
         if let Err(e) = match io_event {
-            IoEvent::Initialise => self.initialise().await,
+            IoEvent::Initialise => self.initialise(config).await,
         } {
             error!("{e}");
         }

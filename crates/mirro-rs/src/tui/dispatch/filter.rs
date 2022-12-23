@@ -1,6 +1,10 @@
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+use clap::ValueEnum;
+use serde::Deserialize;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Filter {
     Https,
     Http,

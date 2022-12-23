@@ -96,7 +96,18 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                 let count = f
                     .mirrors
                     .iter()
-                    .filter(|f| filter_result(app, &items.last_check, f))
+                    .filter(|m| {
+                        // let config = app.configuration.lock().unwrap();
+                        // if config.country.is_empty() {
+                        filter_result(app, &items.last_check, m)
+                        // } else {
+                        //     config
+                        //         .country
+                        //         .iter()
+                        //         .any(|n| n.eq_ignore_ascii_case(&f.name))
+                        //         && filter_result(app, &items.last_check, m)
+                        // }
+                    })
                     .count();
                 if count == 0 {
                     None
@@ -110,15 +121,11 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
                     None
                 }
             })
-            .sorted_by_key(|(f, count)| {
-                if app.active_sort.contains(&ViewSort::Alphabetical)
-                    && app.active_sort.contains(&ViewSort::MirrorCount)
-                {
-                    (f.name.clone(), *count)
-                } else if app.active_sort.contains(&ViewSort::MirrorCount) {
-                    (String::default(), *count)
-                } else {
-                    (f.name.clone(), 0)
+            .sorted_by(|(f, count), (b, second_count)| {
+                let config = app.configuration.lock().unwrap();
+                match config.view {
+                    ViewSort::Alphabetical => Ord::cmp(&f.name, &b.name),
+                    ViewSort::MirrorCount => Ord::cmp(&second_count, &count),
                 }
             })
             .collect_vec();
@@ -239,7 +246,7 @@ fn draw_filter(app: &App) -> Paragraph {
 }
 
 fn draw_selection<'a>(app: &App) -> Table<'a> {
-    let header_cells = ["code", "proto", "comp %", "delay", "dur", "std_dev"]
+    let header_cells = ["code", "proto", "comp %", "delay", "score", "dur"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
     let headers = Row::new(header_cells);
@@ -252,9 +259,9 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
             (hours, minutes)
         });
 
-        let dur = f.duration_avg.map(format_float);
+        let score = f.score.map(format_float);
 
-        let std_dev = f.duration_stddev.map(format_float);
+        let dur = f.duration_stddev.map(format_float);
 
         let completion = f.completion_pct;
 
@@ -301,12 +308,12 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
                 None => Style::default(),
             }),
             Cell::from(
-                dur.map(|f| f.to_string())
+                score
+                    .map(|f| f.to_string())
                     .unwrap_or_else(|| "-".to_string()),
             ),
             Cell::from(
-                std_dev
-                    .map(|f| f.to_string())
+                dur.map(|f| f.to_string())
                     .unwrap_or_else(|| "-".to_string()),
             ),
         ])
@@ -337,9 +344,10 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
 }
 
 fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
-    let count = app.active_sort.len() + app.active_filter.len();
-    let mut sorts: Vec<_> = app
-        .active_sort
+    let config = app.configuration.lock().unwrap();
+    let count = config.filters.len() + 1;
+    let active_sort = vec![config.view];
+    let mut sorts: Vec<_> = active_sort
         .iter()
         .enumerate()
         .flat_map(|(idx, f)| {
@@ -354,10 +362,8 @@ fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
         })
         .collect();
 
-    let count = app.active_filter.len();
-
-    let mut filters: Vec<_> = app
-        .active_filter
+    let mut filters: Vec<_> = config
+        .filters
         .iter()
         .enumerate()
         .flat_map(|(idx, f)| {
@@ -416,14 +422,15 @@ fn format_float(str: impl ToString) -> f32 {
 }
 
 pub fn filter_result(app: &App, last_check: &DateTime<Utc>, f: &Mirror) -> bool {
-    if app.active_filter.contains(&Filter::InSync) {
+    let config = app.configuration.lock().unwrap();
+    if config.filters.contains(&Filter::InSync) {
         if let Some(mirror_sync) = f.last_sync {
             let duration = *last_check - mirror_sync;
-            duration.num_hours() <= 24 && app.active_filter.contains(&protocol_mapper(f.protocol))
+            duration.num_hours() <= 24 && config.filters.contains(&protocol_mapper(f.protocol))
         } else {
             false
         }
     } else {
-        app.active_filter.contains(&protocol_mapper(f.protocol))
+        config.filters.contains(&protocol_mapper(f.protocol))
     }
 }
