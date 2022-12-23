@@ -18,6 +18,7 @@ pub fn read_config_file() -> (Args, Option<PathBuf>) {
     });
     match config_file {
         Some(Some(opts)) => opts,
+        #[allow(unused_variables)]
         _ => {
             #[cfg(feature = "config-toml")]
             let config_str = include_str!("../../../../examples/mirro-rs.toml");
@@ -56,7 +57,9 @@ fn check_file(file: &PathBuf, backup: Option<&PathBuf>) -> Option<(Args, Option<
     };
 
     let f = std::fs::read_to_string(file);
+
     match f {
+        #[allow(unused_variables)]
         Ok(contents) => {
             #[cfg(feature = "config-toml")]
             let result: Result<Args, _> = toml::from_str::<Args>(&contents);
