@@ -1,0 +1,12 @@
+{
+  "outfile": "/home/user/example/generated-mirrors",
+  "export": 50,
+  "view": "alphabetical",
+  "sort": "score",
+  "countries": [],
+  "cache-ttl": 24,
+  "filters": [
+    "https"
+  ],
+  "url": ""
+}

@@ -37,7 +37,7 @@ jobs:
           reporter: 'github-check'
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fail_on_error: true
-          clippy_flags: --all-targets --all-features
+          clippy_flags: --all-targets --features archlinux --features config-toml
 
   rust:
     runs-on: ubuntu-latest
@@ -60,7 +60,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Compile Tests
-        run: cargo test --no-run --all-features
+        run: cargo test --no-run --features archlinux --features config-toml
 
       - name: Test
-        run: cargo test --all-features
+        run: cargo test --features archlinux --features config-toml
