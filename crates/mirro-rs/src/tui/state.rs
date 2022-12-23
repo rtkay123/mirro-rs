@@ -217,7 +217,6 @@ impl App {
         } else {
             if self.show_input {
                 match key {
-                    Key::Enter => todo!(),
                     Key::Backspace => {
                         if !self.input.is_empty() {
                             self.input = format!(

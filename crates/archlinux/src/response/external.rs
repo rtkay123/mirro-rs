@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub(crate) struct Root {
     pub cutoff: u32,
     pub last_check: DateTime<Utc>,
@@ -13,7 +13,7 @@ pub(crate) struct Root {
     pub version: u8,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub(crate) struct Url {
     pub url: String,
     pub protocol: Protocol,
@@ -32,7 +32,7 @@ pub(crate) struct Url {
     pub details: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Protocol {
     Rsync,

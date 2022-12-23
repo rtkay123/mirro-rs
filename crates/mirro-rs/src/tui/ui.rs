@@ -318,7 +318,7 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
         .header(headers)
         // As any other widget, a Table can be wrapped in a Block.
         .block(create_block(if mirror_count < 1 {
-            format!("Selection({}) ", mirror_count)
+            format!("Selection({mirror_count})")
         } else {
             format!(
                 "Selection({})▶ ({}) to {}",
