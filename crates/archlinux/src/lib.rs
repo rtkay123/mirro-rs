@@ -12,13 +12,11 @@ pub use chrono::*;
 pub use response::external::Protocol;
 pub use response::internal::*;
 
-const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
-
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[tracing::instrument]
-pub async fn archlinux() -> Result<ArchLinux> {
-    let response = get_response().await?;
+pub async fn archlinux(source: &str) -> Result<ArchLinux> {
+    let response = get_response(source).await?;
 
     let bytes = hyper::body::aggregate(response.into_body()).await?;
 
@@ -30,18 +28,18 @@ pub async fn archlinux() -> Result<ArchLinux> {
     Ok(body)
 }
 
-async fn get_response() -> Result<hyper::Response<Body>> {
+async fn get_response(source: &str) -> Result<hyper::Response<Body>> {
     trace!("creating http client");
     let client = Client::builder().build::<_, Body>(HttpsConnector::new());
-    let uri = ARCHLINUX_MIRRORS.parse::<Uri>()?;
+    let uri = source.parse::<Uri>()?;
 
     trace!("building request");
     let req = Request::builder().uri(uri).body(Body::empty())?;
     Ok(client.request(req).await?)
 }
 
-pub async fn archlinux_with_raw() -> Result<(ArchLinux, String)> {
-    let response = get_response().await?;
+pub async fn archlinux_with_raw(source: &str) -> Result<(ArchLinux, String)> {
+    let response = get_response(source).await?;
 
     let bytes = hyper::body::aggregate(response.into_body()).await?;
 

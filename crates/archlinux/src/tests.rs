@@ -2,8 +2,9 @@ use super::Result;
 use hyper::{body::Buf, Body, Client, Request, StatusCode, Uri};
 use hyper_tls::HttpsConnector;
 
-use crate::{response::external::Root, ARCHLINUX_MIRRORS};
+use crate::response::external::Root;
 
+const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
 const LOCAL_SOURCE: &str = include_str!("../sample/archlinux.json");
 
 async fn response() -> Result<hyper::Response<Body>> {

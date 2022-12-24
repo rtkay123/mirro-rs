@@ -46,4 +46,4 @@ filters = [
 
 # A source to check for mirrors
 #
-url = ""
+url = "https://archlinux.org/mirrors/status/json/"

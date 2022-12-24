@@ -130,7 +130,16 @@ async fn get_new_mirrors(
     app: Arc<Mutex<App>>,
     config: Arc<std::sync::Mutex<Configuration>>,
 ) -> Result<()> {
-    match archlinux::archlinux_with_raw().await {
+    let url = Arc::new(Mutex::new(String::default()));
+    let inner = Arc::clone(&url);
+    {
+        let mut val = inner.lock().await;
+        let source = config.lock().unwrap();
+        *val = source.url.clone();
+    }
+    let strs = url.lock().await;
+
+    match archlinux::archlinux_with_raw(&strs).await {
         Ok((mirrors, str_value)) => {
             if let Some(cache) = cache_file {
                 if let Err(e) = std::fs::write(cache, str_value) {
@@ -152,7 +161,7 @@ async fn get_new_mirrors(
             });
             match file {
                 Some(Some(Some(mirrors))) => {
-                    update_state(app, config, mirrors).await;
+                    update_state(app, Arc::clone(&config), mirrors).await;
                 }
                 _ => {
                     bail!("{e}");

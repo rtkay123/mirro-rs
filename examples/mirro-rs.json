@@ -8,5 +8,5 @@
   "filters": [
     "https"
   ],
-  "url": ""
+  "url": "https://archlinux.org/mirrors/status/json/"
 }
