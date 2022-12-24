@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 
 #[cfg(feature = "archlinux")]
-use archlinux::ArchLinux;
+use archlinux::{ArchLinux, Country};
 
 use std::{path::PathBuf, sync::Arc, time::SystemTime};
 
@@ -33,6 +33,8 @@ impl IoAsyncHandler {
                     let result = archlinux::archlinux_fallback(&contents);
                     match result {
                         Ok(mirrors) => {
+                            show_stats(&mirrors.countries, is_fresh);
+
                             update_state(Arc::clone(&self.app), Arc::clone(&config), mirrors).await;
                         }
                         Err(e) => {
@@ -135,14 +137,9 @@ async fn get_new_mirrors(
                     error!("{e}");
                 }
             }
-            let mut count = 0;
-            for i in mirrors.countries.iter() {
-                count += i.mirrors.len();
-            }
-            info!(
-                "Found {count} mirrors from {} countries.",
-                mirrors.countries.len()
-            );
+
+            show_stats(&mirrors.countries, false);
+
             let mut app = app.lock().await;
             app.mirrors = Some(mirrors);
         }
@@ -188,4 +185,17 @@ async fn update_state(
         mirrors.countries = items;
     }
     app.mirrors = Some(mirrors);
+}
+
+#[cfg(feature = "archlinux")]
+fn show_stats(slice: &[Country], is_cache: bool) {
+    let mut count = 0;
+    for i in slice.iter() {
+        count += i.mirrors.len();
+    }
+    info!(
+        "Found {count} mirrors from {} countries{}.",
+        slice.len(),
+        if is_cache { " cached" } else { "" }
+    );
 }
