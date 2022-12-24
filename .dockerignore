@@ -1,0 +1,7 @@
+target
+crates/*/Cargo.lock
+Dockerfile
+.dockerignore
+.git
+.github
+.gitignore
