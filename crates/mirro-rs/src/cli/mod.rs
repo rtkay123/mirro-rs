@@ -5,6 +5,10 @@ use serde::Deserialize;
 
 use crate::tui::dispatch::{filter::Filter, sort::ViewSort};
 
+pub const DEFAULT_MIRROR_COUNT: u16 = 50;
+pub const DEFAULT_CACHE_TTL: u16 = 24;
+pub const ARCH_URL: &str = "https://archlinux.org/mirrors/status/json/";
+
 #[derive(Parser, Debug, Deserialize)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
@@ -52,45 +56,35 @@ pub struct Args {
     /// Specify alternate configuration file [default: $XDG_CONFIG_HOME/mirro-rs/mirro-rs.toml]
     #[arg(long)]
     #[serde(default = "configuration_dir")]
-    #[cfg(feature = "toml")]
-    pub config: Option<PathBuf>,
-
-    /// Specify alternate configuration file [default: $XDG_CONFIG_HOME/mirro-rs/mirro-rs.json]
-    #[arg(long)]
-    #[serde(default = "configuration_dir")]
-    #[cfg(feature = "json")]
-    pub config: Option<PathBuf>,
-
-    /// Specify alternate configuration file [default: $XDG_CONFIG_HOME/mirro-rs/mirro-rs.yaml]
-    #[arg(long)]
-    #[serde(default = "configuration_dir")]
-    #[cfg(feature = "yaml")]
+    #[cfg(any(feature = "toml", feature = "toml", feature = "json"))]
     pub config: Option<PathBuf>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
+#[derive(Default, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SelectionSort {
     Percentage,
     Delay,
     Duration,
+    #[default]
     Score,
 }
 
+#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
 fn configuration_dir() -> Option<PathBuf> {
     None
 }
 
 fn url() -> Option<String> {
-    Some("https://archlinux.org/mirrors/status/json/".to_string())
+    Some(ARCH_URL.to_string())
 }
 
 fn default_ttl() -> Option<u16> {
-    Some(24)
+    Some(DEFAULT_CACHE_TTL)
 }
 
 fn default_export() -> Option<u16> {
-    Some(50)
+    Some(DEFAULT_MIRROR_COUNT)
 }
 
 fn opt_vec<T>() -> Option<Vec<T>> {

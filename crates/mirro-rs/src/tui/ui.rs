@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-#[cfg(feature = "archlinux")]
 use archlinux::{DateTime, Mirror, Protocol, Utc};
 
 use itertools::Itertools;

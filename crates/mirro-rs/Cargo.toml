@@ -8,13 +8,14 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 anyhow = "1.0.68"
-archlinux = { version = "0.1.0", path = "../archlinux", optional = true }
+archlinux = { version = "0.1.0", path = "../archlinux" }
+cfg-if = { version = "1.0.0", optional = true }
 clap = { version = "4.0.32", features = ["derive"] }
 crossterm = "0.25.0"
 dirs = "4.0.0"
 itertools = "0.10.5"
 log = "0.4.17"
-notify = "5.0.0"
+notify = { version = "5.0.0", optional = true }
 serde = { version = "1.0.151", features = ["derive"] }
 serde_json = { version = "1.0.91", optional = true }
 serde_yaml = { version = "0.9.16", optional = true }
@@ -25,8 +26,7 @@ tui-logger = "0.8.1"
 unicode-width = "0.1.10"
 
 [features]
-default = ["archlinux", "toml"]
-archlinux = ["dep:archlinux"]
-json = ["dep:serde_json"]
-yaml = ["dep:serde_yaml"]
-toml = ["dep:toml"]
+default = []
+json = ["dep:serde_json", "dep:notify", "dep:cfg-if"]
+yaml = ["dep:serde_yaml", "dep:notify", "dep:cfg-if"]
+toml = ["dep:toml", "dep:notify", "dep:cfg-if"]

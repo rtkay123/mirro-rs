@@ -1,4 +1,3 @@
-#[cfg(feature = "archlinux")]
 use archlinux::{
     ArchLinux, Country, {DateTime, Protocol, Utc},
 };
@@ -36,7 +35,6 @@ pub enum AppReturn {
 pub struct App {
     pub show_popup: bool,
     pub actions: Actions,
-    #[cfg(feature = "archlinux")]
     pub mirrors: Option<ArchLinux>,
     pub io_tx: tokio::sync::mpsc::Sender<IoEvent>,
     pub input: String,
@@ -63,7 +61,6 @@ pub struct SelectedMirror {
 }
 
 impl App {
-    #[cfg(feature = "archlinux")]
     pub fn new(
         io_tx: tokio::sync::mpsc::Sender<IoEvent>,
         configuration: Arc<Mutex<Configuration>>,

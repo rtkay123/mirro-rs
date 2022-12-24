@@ -1,8 +1,13 @@
+#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
 mod file;
+
+#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
 mod watch;
 
+#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
 pub use watch::watch_config;
 
+#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
 pub use file::read_config_file;
 
 use std::path::PathBuf;

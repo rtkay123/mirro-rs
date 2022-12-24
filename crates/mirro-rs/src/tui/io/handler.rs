@@ -1,6 +1,5 @@
 use anyhow::{bail, Result};
 
-#[cfg(feature = "archlinux")]
 use archlinux::{ArchLinux, Country};
 
 use std::{path::PathBuf, sync::Arc, time::SystemTime};
@@ -24,7 +23,6 @@ impl IoAsyncHandler {
         Self { app }
     }
 
-    #[cfg(feature = "archlinux")]
     pub async fn initialise(&mut self, config: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
         let (is_fresh, cache_file) = is_fresh(Arc::clone(&config));
         if is_fresh {
@@ -124,7 +122,6 @@ fn is_fresh(app: Arc<std::sync::Mutex<Configuration>>) -> (bool, Option<std::pat
     }
 }
 
-#[cfg(feature = "archlinux")]
 async fn get_new_mirrors(
     cache_file: Option<PathBuf>,
     app: Arc<Mutex<App>>,
@@ -172,7 +169,6 @@ async fn get_new_mirrors(
     Ok(())
 }
 
-#[cfg(feature = "archlinux")]
 async fn update_state(
     app: Arc<Mutex<App>>,
     config: Arc<std::sync::Mutex<Configuration>>,
@@ -196,7 +192,6 @@ async fn update_state(
     app.mirrors = Some(mirrors);
 }
 
-#[cfg(feature = "archlinux")]
 fn show_stats(slice: &[Country], is_cache: bool) {
     let mut count = 0;
     for i in slice.iter() {
