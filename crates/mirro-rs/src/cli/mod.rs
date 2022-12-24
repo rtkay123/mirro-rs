@@ -53,7 +53,7 @@ pub struct Args {
     #[serde(default = "url")]
     pub url: Option<String>,
 
-    /// Specify alternate configuration file [default: $XDG_CONFIG_HOME/mirro-rs/mirro-rs.toml]
+    /// Specify alternate configuration file
     #[arg(long)]
     #[serde(default = "configuration_dir")]
     #[cfg(any(feature = "toml", feature = "toml", feature = "json"))]

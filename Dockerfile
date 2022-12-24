@@ -1,4 +1,3 @@
-# Start with a rust alpine image
 FROM alpine:3.17.0
 
 ENV RUSTFLAGS="-C target-feature=-crt-static"
@@ -11,7 +10,7 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-RUN /root/.cargo/bin/cargo build --release
+RUN /root/.cargo/bin/cargo build --release --all-features
 
 RUN strip target/release/mirro-rs
 
@@ -19,6 +18,6 @@ FROM alpine:3.17.0
 
 RUN apk add --no-cache libgcc
 
-COPY --from=0 /usr/src/app/target/release/mirro-rs .
+COPY --from=0 /usr/src/app/target/release/mirro-rs /bin/
 
-ENTRYPOINT ["/mirro-rs"]
+ENTRYPOINT ["mirro-rs"]
