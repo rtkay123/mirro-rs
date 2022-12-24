@@ -194,9 +194,7 @@ impl App {
                                     {
                                         Ok(mut file) => {
                                             for i in output.iter() {
-                                                if let Err(e) =
-                                                    writeln!(file, "{} {:?}", i.url, i.score)
-                                                {
+                                                if let Err(e) = writeln!(file, "{}", i.url) {
                                                     error!("{e}");
                                                 }
                                             }
