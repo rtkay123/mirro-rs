@@ -191,7 +191,9 @@ impl App {
                                     {
                                         Ok(mut file) => {
                                             for i in output.iter() {
-                                                if let Err(e) = writeln!(file, "{}", i.url) {
+                                                if let Err(e) =
+                                                    writeln!(file, "{}$repo/os/$arch", i.url)
+                                                {
                                                     error!("{e}");
                                                 }
                                             }
