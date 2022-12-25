@@ -1,12 +1,23 @@
 {
-  "outfile": "/home/user/example/generated-mirrors",
-  "export": 50,
-  "view": "alphabetical",
-  "sort": "score",
-  "countries": [],
-  "cache-ttl": 24,
-  "filters": [
-    "https"
-  ],
-  "url": "https://archlinux.org/mirrors/status/json/"
+  "general": {
+    "outfile": "/home/user/example/generated-mirrors",
+    "export": 50,
+    "view": "alphabetical",
+    "sort": "score",
+    "cache-ttl": 24,
+    "url": "https://archlinux.org/mirrors/status/json/"
+  },
+  "filters": {
+    "countries": [],
+    "age": 24,
+    "ipv6": true,
+    "ipv4": true,
+    "isos": true,
+    "protocols": [
+      "https",
+      "http",
+      "rsync"
+    ],
+    "completion-percent": 100
+  }
 }

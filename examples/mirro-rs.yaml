@@ -1,16 +1,18 @@
-outfile: /home/user/example/generated-mirrors
-
-export: 50
-
-view: alphabetical
-
-sort: score
-
-countries: []
-
-cache-ttl: 24
-
+general:
+  outfile: /home/user/example/generated-mirrors
+  export: 50
+  view: alphabetical
+  sort: score
+  cache-ttl: 24
+  url: https://archlinux.org/mirrors/status/json/
 filters:
-  - https
-
-url: "https://archlinux.org/mirrors/status/json/"
+  countries: []
+  age: 24
+  ipv6: true
+  ipv4: true
+  isos: true
+  protocols:
+    - https
+    - http
+    - rsync
+  completion-percent: 100

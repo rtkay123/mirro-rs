@@ -11,6 +11,15 @@ pub const ARCH_URL: &str = "https://archlinux.org/mirrors/status/json/";
 
 #[derive(Parser, Debug, Deserialize)]
 #[command(author, version, about, long_about = None)]
+pub struct ArgConfig {
+    #[command(flatten)]
+    pub general: Args,
+    #[command(flatten)]
+    pub filters: Filters,
+}
+
+#[derive(clap::Args, Debug, Deserialize)]
+#[command(author, version, about, long_about = None)]
 pub struct Args {
     /// File to write mirrors to
     #[arg(short, long)]
@@ -21,11 +30,6 @@ pub struct Args {
     #[serde(default = "default_export")]
     pub export: Option<u16>,
 
-    /// Filters to use on mirrorlists
-    #[arg(short, long, value_enum)]
-    #[serde(default = "filters")]
-    pub filters: Option<Vec<Filter>>,
-
     /// An order to view all countries
     #[arg(short, long, value_enum)]
     #[serde(default = "view")]
@@ -35,12 +39,6 @@ pub struct Args {
     #[arg(short, long, value_enum)]
     #[serde(default = "sort")]
     pub sort: Option<SelectionSort>,
-
-    /// Countries to search for mirrorlists
-    #[arg(short)]
-    #[serde(rename = "countries")]
-    #[serde(default = "opt_vec")]
-    pub country: Option<Vec<String>>,
 
     /// Number of hours to cache mirrorlist for
     #[arg(short, long)]
@@ -60,6 +58,42 @@ pub struct Args {
     pub config: Option<PathBuf>,
 }
 
+#[derive(clap::Args, Default, Debug, Clone, Eq, PartialEq, Deserialize)]
+pub struct Filters {
+    /// How old (in hours) should the mirrors be since last synchronisation
+    #[arg(long, short)]
+    pub age: Option<u16>,
+
+    /// Countries to search for mirrorlists
+    #[arg(short)]
+    #[serde(rename = "countries")]
+    #[serde(default)]
+    pub country: Option<Vec<String>>,
+
+    /// Filters to use on mirrorlists
+    #[arg(short, long, value_enum)]
+    #[serde(default = "filters")]
+    pub protocols: Option<Vec<Filter>>,
+
+    ///Only return mirrors that support IPv4.
+    #[arg(long)]
+    #[serde(default = "enable")]
+    pub ipv4: bool,
+    ///Only return mirrors that support IPv6.
+    #[arg(long)]
+    #[serde(default = "enable")]
+    pub ipv6: bool,
+    /// Only return mirrors that host ISOs.
+    #[arg(long)]
+    #[serde(default = "enable")]
+    pub isos: bool,
+
+    /// Set the minimum completion percent for the returned mirrors.
+    #[arg(long)]
+    #[serde(default = "completion", rename = "completion-percent")]
+    pub completion_percent: Option<u8>,
+}
+
 #[derive(Default, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SelectionSort {
@@ -68,6 +102,15 @@ pub enum SelectionSort {
     Duration,
     #[default]
     Score,
+    Rate,
+}
+
+fn enable() -> bool {
+    true
+}
+
+fn completion() -> Option<u8> {
+    Some(100)
 }
 
 #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
@@ -85,10 +128,6 @@ fn default_ttl() -> Option<u16> {
 
 fn default_export() -> Option<u16> {
     Some(DEFAULT_MIRROR_COUNT)
-}
-
-fn opt_vec<T>() -> Option<Vec<T>> {
-    None
 }
 
 fn sort() -> Option<SelectionSort> {

@@ -15,13 +15,13 @@ mod tui;
 
 #[tokio::main]
 async fn main() {
-    let args = <cli::Args as clap::Parser>::parse();
+    let args = <cli::ArgConfig as clap::Parser>::parse();
 
     #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
-    let (config, file) = config::read_config_file(args.config.as_ref());
+    let (config, file) = config::read_config_file(args.general.config.as_ref());
 
     #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
-    if !check_outfile(&args) && !check_outfile(&config) {
+    if !check_outfile(&args.general) && !check_outfile(&config.general) {
         exit("outfile");
     }
 
@@ -32,16 +32,64 @@ async fn main() {
 
     #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
     let config = {
-        let outfile = args.outfile.unwrap_or_else(|| config.outfile.unwrap());
-        let export = args.export.unwrap_or_else(|| config.export.unwrap());
-        let filters = args.filters.unwrap_or_else(|| config.filters.unwrap());
-        let view = args.view.unwrap_or_else(|| config.view.unwrap());
-        let sort = args.sort.unwrap_or_else(|| config.sort.unwrap());
-        let countries = args.country.unwrap_or_else(|| config.country.unwrap());
-        let ttl = args.ttl.unwrap_or_else(|| config.ttl.unwrap());
-        let url = args.url.unwrap_or_else(|| config.url.unwrap());
+        let outfile = args
+            .general
+            .outfile
+            .unwrap_or_else(|| config.general.outfile.unwrap());
+        let export = args
+            .general
+            .export
+            .unwrap_or_else(|| config.general.export.unwrap());
+        let filters = args
+            .filters
+            .protocols
+            .unwrap_or_else(|| config.filters.protocols.unwrap());
+        let view = args
+            .general
+            .view
+            .unwrap_or_else(|| config.general.view.unwrap());
+        let sort = args
+            .general
+            .sort
+            .unwrap_or_else(|| config.general.sort.unwrap());
+        let countries = args
+            .filters
+            .country
+            .unwrap_or_else(|| config.filters.country.unwrap());
+        let ttl = args
+            .general
+            .ttl
+            .unwrap_or_else(|| config.general.ttl.unwrap());
+        let url = args
+            .general
+            .url
+            .unwrap_or_else(|| config.general.url.unwrap());
 
-        config::Configuration::new(outfile, export, filters, view, sort, countries, ttl, url)
+        let ipv4 = if !args.filters.ipv4 && config.filters.ipv4 {
+            true
+        } else {
+            args.filters.ipv4
+        };
+
+        let ipv6 = if !args.filters.ipv6 && config.filters.ipv6 {
+            true
+        } else {
+            args.filters.ipv6
+        };
+
+        let isos = if !args.filters.isos && config.filters.isos {
+            true
+        } else {
+            args.filters.isos
+        };
+        let completion = args
+            .filters
+            .completion_percent
+            .unwrap_or_else(|| config.filters.completion_percent.unwrap());
+
+        config::Configuration::new(
+            outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6, completion,
+        )
     };
 
     #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
@@ -53,7 +101,7 @@ async fn main() {
             .unwrap_or_else(|| vec![Filter::Http, Filter::Https, Filter::Rsync]);
         let view = args.view.unwrap_or_default();
         let sort = args.sort.unwrap_or_default();
-        let countries = args.country.unwrap_or_default();
+        let countries = args.filters.country.unwrap_or_default();
         let ttl = args.ttl.unwrap_or(DEFAULT_CACHE_TTL);
         let url = args.url.unwrap_or_else(|| ARCH_URL.to_string());
 

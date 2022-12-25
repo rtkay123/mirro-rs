@@ -4,28 +4,28 @@ use std::path::Path;
 
 use itertools::Itertools;
 
-use crate::cli::Args;
+use crate::cli::ArgConfig;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "toml")] {
-        fn default_args()->Args {
+        fn default_args()->ArgConfig {
             let config_str = include_str!("../../../../examples/mirro-rs.toml");
             toml::from_str(config_str).unwrap()
         }
     } else if #[cfg(feature = "yaml")] {
-        fn default_args()->Args {
+        fn default_args()->ArgConfig {
             let config_str = include_str!("../../../../examples/mirro-rs.yaml");
             serde_yaml::from_str(config_str).unwrap()
         }
     } else {
-        fn default_args()->Args {
+        fn default_args()->ArgConfig {
             let config_str = include_str!("../../../../examples/mirro-rs.json");
             serde_json::from_str(config_str).unwrap()
         }
     }
 }
 
-pub fn read_config_file(file: Option<impl AsRef<Path>>) -> (Args, Option<PathBuf>) {
+pub fn read_config_file(file: Option<impl AsRef<Path>>) -> (ArgConfig, Option<PathBuf>) {
     let config_file = if let Some(ref file) = file {
         let buf = file.as_ref().to_path_buf();
         Some(check_file(&buf, None))
@@ -38,7 +38,7 @@ pub fn read_config_file(file: Option<impl AsRef<Path>>) -> (Args, Option<PathBuf
     }
 }
 
-fn check_file(file: &PathBuf, backup: Option<&PathBuf>) -> Option<(Args, Option<PathBuf>)> {
+fn check_file(file: &PathBuf, backup: Option<&PathBuf>) -> Option<(ArgConfig, Option<PathBuf>)> {
     let err = |e| {
         eprintln!("{e}");
     };
@@ -53,7 +53,7 @@ fn check_file(file: &PathBuf, backup: Option<&PathBuf>) -> Option<(Args, Option<
 
     let f = std::fs::read_to_string(file);
 
-    let err_type = || -> Result<Args, String> {
+    let err_type = || -> Result<ArgConfig, String> {
         let ext = String::from_iter(extensions());
         Err(format!("unsupported file extension: file must be: {ext}"))
     };
@@ -64,12 +64,14 @@ fn check_file(file: &PathBuf, backup: Option<&PathBuf>) -> Option<(Args, Option<
             let result = if let Some(ext) = file.extension() {
                 match ext.to_string_lossy().to_string().as_str() {
                     #[cfg(feature = "toml")]
-                    "toml" => toml::from_str::<Args>(&contents).map_err(|e| e.to_string()),
+                    "toml" => toml::from_str::<ArgConfig>(&contents).map_err(|e| e.to_string()),
                     #[cfg(feature = "json")]
-                    "json" => serde_json::from_str::<Args>(&contents).map_err(|e| e.to_string()),
+                    "json" => {
+                        serde_json::from_str::<ArgConfig>(&contents).map_err(|e| e.to_string())
+                    }
                     #[cfg(feature = "yaml")]
                     "yaml" | "yml" => {
-                        serde_yaml::from_str::<Args>(&contents).map_err(|e| e.to_string())
+                        serde_yaml::from_str::<ArgConfig>(&contents).map_err(|e| e.to_string())
                     }
                     _ => err_type(),
                 }
@@ -109,11 +111,11 @@ fn extensions() -> Vec<String> {
     valid_extensions.into_iter().map(String::from).collect_vec()
 }
 
-fn get_config(mut dir: PathBuf, extension: &[String]) -> Option<(Args, Option<PathBuf>)> {
+fn get_config(mut dir: PathBuf, extension: &[String]) -> Option<(ArgConfig, Option<PathBuf>)> {
     let crate_name = env!("CARGO_PKG_NAME");
     let location = PathBuf::from(crate_name);
     let mut file = PathBuf::from(crate_name);
-    let mut result: Option<(Args, Option<PathBuf>)> = None;
+    let mut result: Option<(ArgConfig, Option<PathBuf>)> = None;
     for i in extension.iter() {
         let mut inner_location = location.clone();
         file.set_extension(i);

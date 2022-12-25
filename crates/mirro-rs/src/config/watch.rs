@@ -61,14 +61,18 @@ fn async_watch(
                 {
                     let (config_file, _) = read_config_file(Some(path.as_ref().to_path_buf()));
                     let parsed_config = Configuration::new(
-                        config_file.outfile.unwrap(),
-                        config_file.export.unwrap(),
-                        config_file.filters.unwrap(),
-                        config_file.view.unwrap(),
-                        config_file.sort.unwrap(),
-                        config_file.country.unwrap(),
-                        config_file.ttl.unwrap(),
-                        config_file.url.unwrap(),
+                        config_file.general.outfile.unwrap(),
+                        config_file.general.export.unwrap(),
+                        config_file.filters.protocols.unwrap(),
+                        config_file.general.view.unwrap(),
+                        config_file.general.sort.unwrap(),
+                        config_file.filters.country.unwrap(),
+                        config_file.general.ttl.unwrap(),
+                        config_file.general.url.unwrap(),
+                        config_file.filters.ipv4,
+                        config_file.filters.isos,
+                        config_file.filters.ipv6,
+                        config_file.filters.completion_percent.unwrap(),
                     );
 
                     let mut new_config = config.lock().unwrap();

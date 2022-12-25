@@ -29,6 +29,10 @@ pub struct Configuration {
     pub country: Vec<String>,
     pub ttl: u16,
     pub url: String,
+    pub ipv4: bool,
+    pub ipv6: bool,
+    pub isos: bool,
+    pub completion_percent: u8,
 }
 
 impl Configuration {
@@ -42,6 +46,10 @@ impl Configuration {
         country: Vec<String>,
         ttl: u16,
         url: String,
+        ipv4: bool,
+        isos: bool,
+        ipv6: bool,
+        completion_percent: u8,
     ) -> Self {
         Self {
             outfile,
@@ -53,10 +61,15 @@ impl Configuration {
                 SelectionSort::Delay => ExportSort::MirroringDelay,
                 SelectionSort::Duration => ExportSort::Duration,
                 SelectionSort::Score => ExportSort::Score,
+                SelectionSort::Rate => todo!(),
             },
             country,
             ttl,
             url,
+            ipv4,
+            ipv6,
+            isos,
+            completion_percent,
         }
     }
 }
