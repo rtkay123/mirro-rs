@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use crate::{
     cli::SelectionSort,
     tui::dispatch::{
-        filter::Filter,
+        filter::Protocol,
         sort::{ExportSort, ViewSort},
     },
 };
@@ -23,7 +23,7 @@ use crate::{
 pub struct Configuration {
     pub outfile: PathBuf,
     pub export: u16,
-    pub filters: Vec<Filter>,
+    pub filters: Vec<Protocol>,
     pub view: ViewSort,
     pub sort: ExportSort,
     pub country: Vec<String>,
@@ -33,6 +33,7 @@ pub struct Configuration {
     pub ipv6: bool,
     pub isos: bool,
     pub completion_percent: u8,
+    pub age: u16,
 }
 
 impl Configuration {
@@ -40,7 +41,7 @@ impl Configuration {
     pub fn new(
         outfile: PathBuf,
         export: u16,
-        filters: Vec<Filter>,
+        filters: Vec<Protocol>,
         view: ViewSort,
         sort: SelectionSort,
         country: Vec<String>,
@@ -50,6 +51,7 @@ impl Configuration {
         isos: bool,
         ipv6: bool,
         completion_percent: u8,
+        age: u16,
     ) -> Self {
         Self {
             outfile,
@@ -70,6 +72,7 @@ impl Configuration {
             ipv6,
             isos,
             completion_percent,
+            age,
         }
     }
 }

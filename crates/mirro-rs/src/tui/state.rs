@@ -1,4 +1,4 @@
-use archlinux::{ArchLinux, Country, OffsetDateTime, Protocol};
+use archlinux::{ArchLinux, Country, DateTime, Utc};
 use std::{
     io::Write,
     sync::{Arc, Mutex},
@@ -18,7 +18,7 @@ use crate::tui::actions::Action;
 
 use super::{
     actions::Actions,
-    dispatch::{filter::Filter, sort::ViewSort},
+    dispatch::{filter::Protocol, sort::ViewSort},
     inputs::key::Key,
     io::IoEvent,
     ui::filter_result,
@@ -44,6 +44,7 @@ pub struct App {
     pub table_viewport_height: u16,
     pub configuration: Arc<Mutex<Configuration>>,
     pub popup_text: String,
+    pub show_insync: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -54,7 +55,7 @@ pub struct SelectedMirror {
     pub delay: Option<i64>,
     pub score: Option<f64>,
     pub duration_stddev: Option<f64>,
-    pub last_sync: Option<OffsetDateTime>,
+    pub last_sync: Option<DateTime<Utc>>,
     pub url: String,
 }
 
@@ -63,6 +64,9 @@ impl App {
         io_tx: tokio::sync::mpsc::Sender<IoEvent>,
         configuration: Arc<Mutex<Configuration>>,
     ) -> Self {
+        let show_sync = configuration.lock().unwrap();
+        let sync = show_sync.age != 0;
+        drop(show_sync);
         Self {
             actions: vec![Action::Quit].into(),
             show_popup: true,
@@ -77,6 +81,7 @@ impl App {
             selected_mirrors: vec![],
             filtered_countries: vec![],
             popup_text: String::from("Getting preparing your mirrorlist. Please wait..."),
+            show_insync: sync,
         }
     }
 
@@ -126,10 +131,10 @@ impl App {
                         self.next();
                         AppReturn::Continue
                     }
-                    Action::FilterHttps => insert_filter(self, Filter::Https),
-                    Action::FilterHttp => insert_filter(self, Filter::Http),
-                    Action::FilterRsync => insert_filter(self, Filter::Rsync),
-                    Action::FilterSyncing => insert_filter(self, Filter::InSync),
+                    Action::FilterHttps => insert_filter(self, Protocol::Https),
+                    Action::FilterHttp => insert_filter(self, Protocol::Http),
+                    Action::FilterRsync => insert_filter(self, Protocol::Rsync),
+                    Action::FilterSyncing => insert_filter(self, Protocol::InSync),
                     Action::ViewSortAlphabetically => insert_sort(self, ViewSort::Alphabetical),
                     Action::ViewSortMirrorCount => insert_sort(self, ViewSort::MirrorCount),
                     Action::ToggleSelect => {
@@ -363,7 +368,7 @@ impl App {
     }
 
     pub fn focused_country(&mut self) {
-        if let Some(items) = self.mirrors.as_ref() {
+        if self.mirrors.is_some() {
             let country = if self.scroll_pos < self.table_viewport_height as isize {
                 let (country, _) = &self.filtered_countries[self.scroll_pos as usize];
                 // we can directly index
@@ -384,10 +389,10 @@ impl App {
             let mut mirrors = country
                 .mirrors
                 .iter()
-                .filter(|f| filter_result(self, &items.last_check, f))
+                .filter(|f| filter_result(self, f))
                 .map(|f| SelectedMirror {
                     country_code: country.code.to_string(),
-                    protocol: f.protocol,
+                    protocol: Protocol::from(f.protocol),
                     completion_pct: f.completion_pct,
                     delay: f.delay,
                     score: f.score,
@@ -434,14 +439,16 @@ fn insert_character(app: &mut App, key: char) {
     app.scroll_pos = 0;
 }
 
-fn insert_filter(app: &mut App, filter: Filter) -> AppReturn {
+fn insert_filter(app: &mut App, filter: Protocol) -> AppReturn {
     let mut config = app.configuration.lock().unwrap();
     if let Some(idx) = config.filters.iter().position(|f| *f == filter) {
         debug!("protocol filter: removed {filter}");
         config.filters.remove(idx);
+        app.show_insync = false;
     } else {
         debug!("protocol filter: added {filter}");
         config.filters.push(filter);
+        app.show_insync = false;
     }
     app.scroll_pos = 0;
     AppReturn::Continue

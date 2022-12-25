@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use archlinux::{Mirror, OffsetDateTime, Protocol};
+use archlinux::{DateTime, Local, Mirror};
 
 use itertools::Itertools;
 use tui::{
@@ -15,7 +15,7 @@ use tui_logger::TuiLoggerWidget;
 
 use super::{
     actions::{Action, Actions},
-    dispatch::{filter::Filter, sort::ViewSort},
+    dispatch::{filter::Protocol, sort::ViewSort},
     state::App,
 };
 
@@ -92,11 +92,7 @@ fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
             .countries
             .iter()
             .filter_map(|f| {
-                let count = f
-                    .mirrors
-                    .iter()
-                    .filter(|m| filter_result(app, &items.last_check, m))
-                    .count();
+                let count = f.mirrors.iter().filter(|m| filter_result(app, m)).count();
                 if count == 0 {
                     None
                 } else if f
@@ -372,7 +368,7 @@ fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
                 format!(" {f}"),
                 Style::default()
                     .fg(match f {
-                        Filter::InSync => Color::Cyan,
+                        Protocol::InSync => Color::Cyan,
                         _ => Color::Blue,
                     })
                     .add_modifier(Modifier::BOLD),
@@ -407,14 +403,6 @@ fn create_block<'a>(title: impl Into<String>) -> Block<'a> {
         ))
 }
 
-pub fn protocol_mapper(protocol: Protocol) -> Filter {
-    match protocol {
-        Protocol::Rsync => Filter::Rsync,
-        Protocol::Http => Filter::Http,
-        Protocol::Https => Filter::Https,
-    }
-}
-
 fn format_float(str: impl ToString) -> f32 {
     match str.to_string().parse::<f32>() {
         Ok(res) => (res * 100.0).round() / 100.0,
@@ -422,17 +410,23 @@ fn format_float(str: impl ToString) -> f32 {
     }
 }
 
-pub fn filter_result(app: &App, last_check: &OffsetDateTime, f: &Mirror) -> bool {
-    let config = app.configuration.lock().unwrap();
-    if config.filters.contains(&Filter::InSync) {
+pub fn filter_result(app: &App, f: &Mirror) -> bool {
+    let mut config = app.configuration.lock().unwrap();
+
+    if config.age != 0 {
         if let Some(mirror_sync) = f.last_sync {
-            let duration = *last_check - mirror_sync;
-            duration.whole_hours() <= config.ttl.into()
-                && config.filters.contains(&protocol_mapper(f.protocol))
+            let now = Local::now();
+            let mirror_sync: DateTime<Local> = DateTime::from(mirror_sync);
+            let duration = now - mirror_sync;
+            if !config.filters.contains(&Protocol::InSync) && app.show_insync {
+                config.filters.push(Protocol::InSync);
+            }
+            duration.num_hours() <= config.age.into()
+                && config.filters.contains(&Protocol::from(f.protocol))
         } else {
             false
         }
     } else {
-        config.filters.contains(&protocol_mapper(f.protocol))
+        config.filters.contains(&Protocol::from(f.protocol))
     }
 }

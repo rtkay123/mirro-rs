@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, ValueEnum};
 use serde::Deserialize;
 
-use crate::tui::dispatch::{filter::Filter, sort::ViewSort};
+use crate::tui::dispatch::{filter::Protocol, sort::ViewSort};
 
 pub const DEFAULT_MIRROR_COUNT: u16 = 50;
 pub const DEFAULT_CACHE_TTL: u16 = 24;
@@ -73,7 +73,7 @@ pub struct Filters {
     /// Filters to use on mirrorlists
     #[arg(short, long, value_enum)]
     #[serde(default = "filters")]
-    pub protocols: Option<Vec<Filter>>,
+    pub protocols: Option<Vec<Protocol>>,
 
     ///Only return mirrors that support IPv4.
     #[arg(long)]
@@ -138,6 +138,6 @@ fn view() -> Option<ViewSort> {
     Some(ViewSort::Alphabetical)
 }
 
-fn filters() -> Option<Vec<Filter>> {
-    Some(vec![Filter::Http, Filter::Https])
+fn filters() -> Option<Vec<Protocol>> {
+    Some(vec![Protocol::Http, Protocol::Https])
 }

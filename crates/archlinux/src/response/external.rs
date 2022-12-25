@@ -1,15 +1,14 @@
 use std::fmt::Display;
 
-use serde::{Deserialize, Serialize};
 #[cfg(feature = "time")]
-use time::OffsetDateTime;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub(crate) struct Root {
     pub cutoff: u32,
     #[cfg(feature = "time")]
-    #[serde(with = "time::serde::rfc3339")]
-    pub last_check: OffsetDateTime,
+    pub last_check: DateTime<Utc>,
     #[cfg(not(feature = "time"))]
     pub last_check: String,
     pub num_checks: u8,
@@ -23,8 +22,7 @@ pub(crate) struct Url {
     pub url: String,
     pub protocol: Protocol,
     #[cfg(feature = "time")]
-    #[serde(with = "time::serde::rfc3339::option", default)]
-    pub last_sync: Option<OffsetDateTime>,
+    pub last_sync: Option<DateTime<Utc>>,
     #[cfg(not(feature = "time"))]
     pub last_sync: Option<String>,
     pub completion_pct: f32,

@@ -3,7 +3,7 @@ use serde::Deserialize;
 use tracing::debug;
 
 #[cfg(feature = "time")]
-use time::OffsetDateTime;
+use chrono::{DateTime, Utc};
 
 use super::external::{Protocol, Root};
 
@@ -11,8 +11,7 @@ use super::external::{Protocol, Root};
 pub struct ArchLinux {
     pub cutoff: u32,
     #[cfg(feature = "time")]
-    #[serde(with = "time::serde::rfc3339")]
-    pub last_check: OffsetDateTime,
+    pub last_check: DateTime<Utc>,
     #[cfg(not(feature = "time"))]
     pub last_check: String,
     pub num_checks: u8,
@@ -37,10 +36,12 @@ pub struct Mirror {
     pub score: Option<f64>,
     pub duration_stddev: Option<f64>,
     #[cfg(feature = "time")]
-    #[serde(with = "time::serde::rfc3339::option", default)]
-    pub last_sync: Option<OffsetDateTime>,
+    pub last_sync: Option<DateTime<Utc>>,
     #[cfg(not(feature = "time"))]
     pub last_sync: Option<String>,
+    pub ipv4: bool,
+    pub ipv6: bool,
+    pub isos: bool,
 }
 
 impl From<Root> for ArchLinux {
@@ -75,6 +76,9 @@ impl From<Root> for ArchLinux {
                             last_sync: f.last_sync,
                             #[cfg(not(feature = "time"))]
                             last_sync: f.last_sync.clone(),
+                            ipv4: f.ipv4,
+                            ipv6: f.ipv6,
+                            isos: f.isos,
                         })
                     } else {
                         None

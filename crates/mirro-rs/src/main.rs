@@ -6,7 +6,7 @@ use self::config::watch_config;
 #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
 use self::{
     cli::{ARCH_URL, DEFAULT_CACHE_TTL, DEFAULT_MIRROR_COUNT},
-    tui::dispatch::filter::Filter,
+    tui::dispatch::filter::Protocol,
 };
 
 mod cli;
@@ -26,12 +26,35 @@ async fn main() {
     }
 
     #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
-    if !check_outfile(&args) {
+    if !check_outfile(&args.general) {
         exit("outfile");
     }
 
     #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+    let get_bools = |args: &cli::Filters, config: &cli::Filters| {
+        let ipv4 = if !args.ipv4 && config.ipv4 {
+            true
+        } else {
+            args.ipv4
+        };
+
+        let ipv6 = if !args.ipv6 && config.ipv6 {
+            true
+        } else {
+            args.ipv6
+        };
+
+        let isos = if !args.isos && config.isos {
+            true
+        } else {
+            args.isos
+        };
+        (ipv4, ipv6, isos)
+    };
+
+    #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
     let config = {
+        let (ipv4, isos, ipv6) = get_bools(&args.filters, &config.filters);
         let outfile = args
             .general
             .outfile
@@ -65,47 +88,55 @@ async fn main() {
             .url
             .unwrap_or_else(|| config.general.url.unwrap());
 
-        let ipv4 = if !args.filters.ipv4 && config.filters.ipv4 {
-            true
-        } else {
-            args.filters.ipv4
-        };
-
-        let ipv6 = if !args.filters.ipv6 && config.filters.ipv6 {
-            true
-        } else {
-            args.filters.ipv6
-        };
-
-        let isos = if !args.filters.isos && config.filters.isos {
-            true
-        } else {
-            args.filters.isos
-        };
         let completion = args
             .filters
             .completion_percent
             .unwrap_or_else(|| config.filters.completion_percent.unwrap());
 
+        let age = args
+            .filters
+            .age
+            .unwrap_or_else(|| config.filters.age.unwrap_or_default());
+
         config::Configuration::new(
-            outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6, completion,
+            outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6,
+            completion, age,
         )
     };
 
     #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
     let config = {
-        let outfile = args.outfile.or_else(|| exit("outfile")).unwrap();
-        let export = args.export.unwrap_or(DEFAULT_MIRROR_COUNT);
+        let outfile = args.general.outfile.or_else(|| exit("outfile")).unwrap();
+        let export = args.general.export.unwrap_or(DEFAULT_MIRROR_COUNT);
         let filters = args
             .filters
-            .unwrap_or_else(|| vec![Filter::Http, Filter::Https, Filter::Rsync]);
-        let view = args.view.unwrap_or_default();
-        let sort = args.sort.unwrap_or_default();
+            .protocols
+            .unwrap_or_else(|| vec![Protocol::Http, Protocol::Https]);
+        let view = args.general.view.unwrap_or_default();
+        let sort = args.general.sort.unwrap_or_default();
         let countries = args.filters.country.unwrap_or_default();
-        let ttl = args.ttl.unwrap_or(DEFAULT_CACHE_TTL);
-        let url = args.url.unwrap_or_else(|| ARCH_URL.to_string());
+        let ttl = args.general.ttl.unwrap_or(DEFAULT_CACHE_TTL);
+        let url = args.general.url.unwrap_or_else(|| ARCH_URL.to_string());
 
-        config::Configuration::new(outfile, export, filters, view, sort, countries, ttl, url)
+        let completion = args.filters.completion_percent.unwrap_or(100);
+
+        let age = args.filters.age.unwrap_or(0);
+
+        config::Configuration::new(
+            outfile,
+            export,
+            filters,
+            view,
+            sort,
+            countries,
+            ttl,
+            url,
+            args.filters.ipv4,
+            args.filters.isos,
+            args.filters.ipv6,
+            completion,
+            age,
+        )
     };
 
     let config = Arc::new(Mutex::new(config));

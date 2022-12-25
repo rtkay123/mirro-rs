@@ -8,10 +8,10 @@ use crate::response::external::Root;
 mod tests;
 
 mod response;
+#[cfg(feature = "time")]
+pub use chrono::*;
 pub use response::external::Protocol;
 pub use response::internal::*;
-#[cfg(feature = "time")]
-pub use time::*;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
