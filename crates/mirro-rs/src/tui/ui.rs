@@ -411,7 +411,27 @@ fn format_float(str: impl ToString) -> f32 {
 }
 
 pub fn filter_result(app: &App, f: &Mirror) -> bool {
+    use crate::config::Configuration;
     let mut config = app.configuration.lock().unwrap();
+
+    let res = |config: &Configuration, f: &Mirror| {
+        let mut completion_ok = config.completion_percent as f32 <= f.completion_pct * 100.0;
+        let v4_on = config.filters.contains(&Protocol::Ipv4);
+        let isos_on = config.filters.contains(&Protocol::Isos);
+        let v6_on = config.filters.contains(&Protocol::Ipv6);
+        if v4_on {
+            completion_ok = completion_ok && f.ipv4;
+        }
+
+        if isos_on {
+            completion_ok = completion_ok && f.isos;
+        }
+
+        if v6_on {
+            completion_ok = completion_ok && f.ipv6;
+        }
+        completion_ok
+    };
 
     if config.age != 0 {
         if let Some(mirror_sync) = f.last_sync {
@@ -423,10 +443,11 @@ pub fn filter_result(app: &App, f: &Mirror) -> bool {
             }
             duration.num_hours() <= config.age.into()
                 && config.filters.contains(&Protocol::from(f.protocol))
+                && res(&config, f)
         } else {
             false
         }
     } else {
-        config.filters.contains(&Protocol::from(f.protocol))
+        config.filters.contains(&Protocol::from(f.protocol)) && res(&config, f)
     }
 }

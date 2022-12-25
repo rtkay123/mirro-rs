@@ -9,7 +9,7 @@ url = "https://archlinux.org/mirrors/status/json/"
 
 [filters]
 countries = [ ]
-age = 3
+age = 0
 ipv6 = true
 ipv4 = true
 isos = true

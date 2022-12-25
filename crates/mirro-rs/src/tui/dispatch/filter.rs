@@ -11,6 +11,12 @@ pub enum Protocol {
     Rsync,
     #[value(skip)]
     InSync,
+    #[value(skip)]
+    Ipv4,
+    #[value(skip)]
+    Ipv6,
+    #[value(skip)]
+    Isos,
 }
 
 impl From<archlinux::Protocol> for Protocol {
@@ -33,6 +39,9 @@ impl Display for Protocol {
                 Protocol::Http => "http",
                 Protocol::Rsync => "rsync",
                 Protocol::InSync => "in-sync",
+                Protocol::Ipv4 => "ipv4",
+                Protocol::Ipv6 => "ipv6",
+                Protocol::Isos => "isos",
             }
         )
     }

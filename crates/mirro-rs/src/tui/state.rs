@@ -212,6 +212,9 @@ impl App {
                         }
                         AppReturn::Continue
                     }
+                    Action::FilterIpv4 => insert_filter(self, Protocol::Ipv4),
+                    Action::FilterIpv6 => insert_filter(self, Protocol::Ipv6),
+                    Action::FilterIsos => insert_filter(self, Protocol::Isos),
                 }
             }
         } else {
@@ -291,6 +294,9 @@ impl App {
             Action::FilterHttps,
             Action::FilterRsync,
             Action::FilterSyncing,
+            Action::FilterIpv4,
+            Action::FilterIpv6,
+            Action::FilterIsos,
             Action::ToggleSelect,
             Action::ViewSortAlphabetically,
             Action::ViewSortMirrorCount,

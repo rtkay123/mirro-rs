@@ -13,6 +13,9 @@ pub enum Action {
     FilterHttp,
     FilterRsync,
     FilterSyncing,
+    FilterIpv4,
+    FilterIpv6,
+    FilterIsos,
     ViewSortAlphabetically,
     ViewSortMirrorCount,
     ToggleSelect,
@@ -25,7 +28,7 @@ pub enum Action {
 
 impl Action {
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 17] = [
+        static ACTIONS: [Action; 20] = [
             Action::Quit,
             Action::ClosePopUp,
             Action::ShowInput,
@@ -34,6 +37,9 @@ impl Action {
             Action::FilterHttp,
             Action::FilterHttps,
             Action::FilterRsync,
+            Action::FilterIpv4,
+            Action::FilterIpv6,
+            Action::FilterIsos,
             Action::FilterSyncing,
             Action::ViewSortMirrorCount,
             Action::ViewSortAlphabetically,
@@ -66,6 +72,9 @@ impl Action {
             Action::SelectionSortDuration => &[Key::Char('7')],
             Action::SelectionSortScore => &[Key::Char('8')],
             Action::Export => &[Key::Ctrl('e')],
+            Action::FilterIpv4 => &[Key::Ctrl('4')],
+            Action::FilterIpv6 => &[Key::Ctrl('6')],
+            Action::FilterIsos => &[Key::Ctrl('5')],
         }
     }
 }
@@ -90,6 +99,9 @@ impl Display for Action {
             Action::SelectionSortDuration => "sort [selection] duration",
             Action::SelectionSortScore => "sort [selection] score",
             Action::Export => "export mirrors",
+            Action::FilterIpv4 => "toggle ipv4",
+            Action::FilterIpv6 => "toggle ipv6",
+            Action::FilterIsos => "toggle isos",
         };
         write!(f, "{str}")
     }
