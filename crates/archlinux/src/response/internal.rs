@@ -1,17 +1,19 @@
-#[cfg(feature = "chrono")]
-use chrono::{DateTime, Utc};
 use itertools::Itertools;
 use serde::Deserialize;
 use tracing::debug;
+
+#[cfg(feature = "time")]
+use time::OffsetDateTime;
 
 use super::external::{Protocol, Root};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct ArchLinux {
     pub cutoff: u32,
-    #[cfg(feature = "chrono")]
-    pub last_check: DateTime<Utc>,
-    #[cfg(not(feature = "chrono"))]
+    #[cfg(feature = "time")]
+    #[serde(with = "time::serde::rfc3339")]
+    pub last_check: OffsetDateTime,
+    #[cfg(not(feature = "time"))]
     pub last_check: String,
     pub num_checks: u8,
     pub check_frequency: u16,
@@ -34,9 +36,10 @@ pub struct Mirror {
     pub delay: Option<i64>,
     pub score: Option<f64>,
     pub duration_stddev: Option<f64>,
-    #[cfg(feature = "chrono")]
-    pub last_sync: Option<DateTime<Utc>>,
-    #[cfg(not(feature = "chrono"))]
+    #[cfg(feature = "time")]
+    #[serde(with = "time::serde::rfc3339::option", default)]
+    pub last_sync: Option<OffsetDateTime>,
+    #[cfg(not(feature = "time"))]
     pub last_sync: Option<String>,
 }
 
@@ -68,9 +71,9 @@ impl From<Root> for ArchLinux {
                             delay: f.delay,
                             score: f.score,
                             duration_stddev: f.duration_stddev,
-                            #[cfg(feature = "chrono")]
+                            #[cfg(feature = "time")]
                             last_sync: f.last_sync,
-                            #[cfg(not(feature = "chrono"))]
+                            #[cfg(not(feature = "time"))]
                             last_sync: f.last_sync.clone(),
                         })
                     } else {

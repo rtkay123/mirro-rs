@@ -1,6 +1,4 @@
-use archlinux::{
-    ArchLinux, Country, {DateTime, Protocol, Utc},
-};
+use archlinux::{ArchLinux, Country, OffsetDateTime, Protocol};
 use std::{
     io::Write,
     sync::{Arc, Mutex},
@@ -56,7 +54,7 @@ pub struct SelectedMirror {
     pub delay: Option<i64>,
     pub score: Option<f64>,
     pub duration_stddev: Option<f64>,
-    pub last_sync: Option<DateTime<Utc>>,
+    pub last_sync: Option<OffsetDateTime>,
     pub url: String,
 }
 

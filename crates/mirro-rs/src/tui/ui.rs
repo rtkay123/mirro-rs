@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use archlinux::{DateTime, Mirror, Protocol, Utc};
+use archlinux::{Mirror, OffsetDateTime, Protocol};
 
 use itertools::Itertools;
 use tui::{
@@ -422,12 +422,12 @@ fn format_float(str: impl ToString) -> f32 {
     }
 }
 
-pub fn filter_result(app: &App, last_check: &DateTime<Utc>, f: &Mirror) -> bool {
+pub fn filter_result(app: &App, last_check: &OffsetDateTime, f: &Mirror) -> bool {
     let config = app.configuration.lock().unwrap();
     if config.filters.contains(&Filter::InSync) {
         if let Some(mirror_sync) = f.last_sync {
             let duration = *last_check - mirror_sync;
-            duration.num_hours() <= config.ttl.into()
+            duration.whole_hours() <= config.ttl.into()
                 && config.filters.contains(&protocol_mapper(f.protocol))
         } else {
             false
