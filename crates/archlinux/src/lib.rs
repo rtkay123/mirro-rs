@@ -8,6 +8,7 @@ use crate::response::external::Root;
 mod tests;
 
 mod response;
+#[cfg(feature = "chrono")]
 pub use chrono::*;
 pub use response::external::Protocol;
 pub use response::internal::*;

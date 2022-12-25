@@ -1,12 +1,17 @@
 use std::fmt::Display;
 
+#[cfg(feature = "chrono")]
 use chrono::{DateTime, Utc};
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub(crate) struct Root {
     pub cutoff: u32,
+    #[cfg(feature = "chrono")]
     pub last_check: DateTime<Utc>,
+    #[cfg(not(feature = "chrono"))]
+    pub last_check: String,
     pub num_checks: u8,
     pub check_frequency: u16,
     pub urls: Vec<Url>,
@@ -17,7 +22,10 @@ pub(crate) struct Root {
 pub(crate) struct Url {
     pub url: String,
     pub protocol: Protocol,
+    #[cfg(feature = "chrono")]
     pub last_sync: Option<DateTime<Utc>>,
+    #[cfg(not(feature = "chrono"))]
+    pub last_sync: Option<String>,
     pub completion_pct: f32,
     pub delay: Option<i64>,
     pub duration_avg: Option<f64>,
