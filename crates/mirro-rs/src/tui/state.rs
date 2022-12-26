@@ -207,12 +207,11 @@ impl App {
                                     set.spawn(archlinux::rate_mirror(url, client.clone()));
                                 }
                                 {
-                                let mut state = popup_state.lock().unwrap();
-                                state.popup_text = 
-                               // self.popup_text =
-                                    String::from("exporting your mirrors, please wait");
-                                self.show_popup
-                                    .store(true, std::sync::atomic::Ordering::Relaxed);
+                                    let mut state = popup_state.lock().unwrap();
+                                    state.popup_text =
+                                        String::from("exporting your mirrors, please wait");
+                                    self.show_popup
+                                        .store(true, std::sync::atomic::Ordering::Relaxed);
                                 }
 
                                 let config = Arc::clone(&self.configuration);
