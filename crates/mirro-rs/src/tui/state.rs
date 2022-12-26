@@ -1,8 +1,9 @@
 use archlinux::{ArchLinux, Country, DateTime, Utc};
 use std::{
     io::Write,
-    sync::{Arc, Mutex},
+    sync::{atomic::AtomicBool, Arc, Mutex},
 };
+use tokio::task::JoinSet;
 
 use crate::config::Configuration;
 
@@ -31,7 +32,6 @@ pub enum AppReturn {
 }
 
 pub struct App {
-    pub show_popup: bool,
     pub actions: Actions,
     pub mirrors: Option<ArchLinux>,
     pub io_tx: tokio::sync::mpsc::Sender<IoEvent>,
@@ -43,8 +43,21 @@ pub struct App {
     pub selected_mirrors: Vec<SelectedMirror>,
     pub table_viewport_height: u16,
     pub configuration: Arc<Mutex<Configuration>>,
-    pub popup_text: String,
     pub show_insync: bool,
+    pub show_popup: AtomicBool,
+    pub exporting: AtomicBool,
+}
+
+pub struct PopUpState {
+    pub popup_text: String,
+}
+
+impl PopUpState {
+    pub fn new() -> Self {
+        Self {
+            popup_text: String::from("Getting mirrors... please wait..."),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -69,7 +82,7 @@ impl App {
         drop(show_sync);
         Self {
             actions: vec![Action::Quit].into(),
-            show_popup: true,
+            show_popup: AtomicBool::new(true),
             show_input: false,
             mirrors: None,
             io_tx,
@@ -80,12 +93,17 @@ impl App {
             table_viewport_height: 0,
             selected_mirrors: vec![],
             filtered_countries: vec![],
-            popup_text: String::from("Getting preparing your mirrorlist. Please wait..."),
+            // popup_text: String::from("Getting preparing your mirrorlist. Please wait..."),
             show_insync: sync,
+            exporting: AtomicBool::new(false),
         }
     }
 
-    pub async fn dispatch_action(&mut self, key: Key) -> AppReturn {
+    pub async fn dispatch_action(
+        &mut self,
+        key: Key,
+        popup_state: Arc<std::sync::Mutex<PopUpState>>,
+    ) -> AppReturn {
         if let Some(action) = self.actions.find(key) {
             if key.is_exit() && !self.show_input {
                 AppReturn::Exit
@@ -115,7 +133,8 @@ impl App {
                 match action {
                     Action::ClosePopUp => {
                         // self.show_popup = !self.show_popup;
-                        self.show_popup = false;
+                        self.show_popup
+                            .store(false, std::sync::atomic::Ordering::Relaxed);
                         AppReturn::Continue
                     }
                     Action::Quit => AppReturn::Continue,
@@ -171,43 +190,131 @@ impl App {
                         AppReturn::Continue
                     }
                     Action::Export => {
-                        if self.selected_mirrors.is_empty() {
-                            warn!("You haven't selected any mirrors yet");
-                        } else {
-                            let config = self.configuration.lock().unwrap();
-                            let outfile = &config.outfile;
-                            if let Some(dir) = outfile.parent() {
-                                if std::fs::create_dir_all(dir).is_ok() {
-                                    let count = config.export as usize;
-                                    let output =
-                                        &self.selected_mirrors[if self.selected_mirrors.len()
-                                            >= count
-                                        {
-                                            ..count
-                                        } else {
-                                            ..self.selected_mirrors.len()
-                                        }];
-                                    match std::fs::OpenOptions::new()
-                                        .write(true)
-                                        .create(true)
-                                        .open(outfile)
-                                    {
-                                        Ok(mut file) => {
-                                            for i in output.iter() {
-                                                if let Err(e) =
-                                                    writeln!(file, "{}$repo/os/$arch", i.url)
-                                                {
+                        if !self.exporting.load(std::sync::atomic::Ordering::Relaxed) {
+                            if self.selected_mirrors.is_empty() {
+                                warn!("You haven't selected any mirrors yet");
+                            } else {
+                                self.exporting
+                                    .store(true, std::sync::atomic::Ordering::Relaxed);
+
+                                let mut mirrors = Vec::with_capacity(self.selected_mirrors.len());
+                                let mut failed: Vec<String> =
+                                    Vec::with_capacity(self.selected_mirrors.len());
+                                let client = archlinux::get_client();
+                                let mut set = JoinSet::new();
+                                for i in self.selected_mirrors.iter() {
+                                    let url = i.url.to_owned();
+                                    set.spawn(archlinux::rate_mirror(url, client.clone()));
+                                }
+                                {
+                                let mut state = popup_state.lock().unwrap();
+                                state.popup_text = 
+                               // self.popup_text =
+                                    String::from("exporting your mirrors, please wait");
+                                self.show_popup
+                                    .store(true, std::sync::atomic::Ordering::Relaxed);
+                                }
+
+                                let config = Arc::clone(&self.configuration);
+
+                                tokio::spawn(async move {
+                                    while let Some(res) = set.join_next().await {
+                                        match res {
+                                            Ok(Ok((duration, url))) => {
+                                                mirrors.push((duration, url));
+                                            }
+                                            Ok(Err(cause)) => {
+                                                let result = cause.to_string();
+                                                let result =
+                                                    result.split_whitespace().collect_vec();
+                                                let cause = &result[0];
+                                                let url = &result[1];
+                                                error!("{cause} Failed to rate mirror for {url}");
+                                                failed.push(url.to_string());
+                                            }
+                                            Err(res) => {
+                                                error!("{}", res.to_string());
+                                            }
+                                        }
+                                    }
+
+                                    mirrors.sort_by(|(duration_a, _), (duration_b, _)| {
+                                        duration_a.cmp(duration_b)
+                                    });
+
+                                    let config = config.lock().unwrap();
+                                    let outfile = &config.outfile;
+
+                                    if let Some(dir) = outfile.parent() {
+                                        if std::fs::create_dir_all(dir).is_ok() {
+                                            let count = config.export as usize;
+                                            let output = &mirrors[if mirrors.len() >= count {
+                                                ..count
+                                            } else {
+                                                ..mirrors.len()
+                                            }];
+                                            match std::fs::OpenOptions::new()
+                                                .write(true)
+                                                .create(true)
+                                                .open(outfile)
+                                            {
+                                                Ok(mut file) => {
+                                                    for (_duration, url) in output.iter() {
+                                                        if let Err(e) =
+                                                            writeln!(file, "{url}$repo/os/$arch")
+                                                        {
+                                                            error!("{e}");
+                                                        }
+                                                    }
+                                                    let mut state = popup_state.lock().unwrap();
+
+                                                    state.popup_text = format!("Your mirrorlist has been successfully exported to: {}",outfile.display());
+                                                    //self.popup_text = format!("Your mirrorlist has been successfully exported to: {}",outfile.display());
+                                                    //  self.show_popup. = true;
+                                                }
+                                                Err(e) => {
                                                     error!("{e}");
                                                 }
                                             }
-                                            self.popup_text = format!("Your mirrorlist has been successfully exported to: {}",outfile.display());
-                                            self.show_popup = true;
-                                        }
-                                        Err(e) => {
-                                            panic!("{e}");
                                         }
                                     }
-                                }
+                                });
+
+                                //     let config = self.configuration.lock().unwrap();
+                                //     let outfile = &config.outfile;
+                                //     if let Some(dir) = outfile.parent() {
+                                //         if std::fs::create_dir_all(dir).is_ok() {
+                                //             let count = config.export as usize;
+                                //             let output =
+                                //                 &self.selected_mirrors[if self.selected_mirrors.len()
+                                //                     >= count
+                                //                 {
+                                //                     ..count
+                                //                 } else {
+                                //                     ..self.selected_mirrors.len()
+                                //                 }];
+                                //             match std::fs::OpenOptions::new()
+                                //                 .write(true)
+                                //                 .create(true)
+                                //                 .open(outfile)
+                                //             {
+                                //                 Ok(mut file) => {
+                                //                     for i in output.iter() {
+                                //                         if let Err(e) =
+                                //                             writeln!(file, "{}$repo/os/$arch", i.url)
+                                //                         {
+                                //                             error!("{e}");
+                                //                         }
+                                //                     }
+                                //                     self.popup_text = format!("Your mirrorlist has been successfully exported to: {}",outfile.display());
+                                //                     self.show_popup = true;
+                                //                 }
+                                //                 Err(e) => {
+                                //                     panic!("{e}");
+                                //                 }
+                                //             }
+                                //         }
+                                //    }
                             }
                         }
                         AppReturn::Continue
@@ -272,9 +379,11 @@ impl App {
     }
 
     pub async fn dispatch(&mut self, action: IoEvent) {
-        self.show_popup = true;
+        self.show_popup
+            .store(true, std::sync::atomic::Ordering::Relaxed);
         if let Err(e) = self.io_tx.send(action).await {
-            self.show_popup = false;
+            self.show_popup
+                .store(false, std::sync::atomic::Ordering::Relaxed);
             error!("Error from dispatch {e}");
         };
     }
@@ -307,7 +416,9 @@ impl App {
             Action::Export,
         ]
         .into();
-        self.show_popup = false;
+
+        self.show_popup
+            .store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn next(&mut self) {

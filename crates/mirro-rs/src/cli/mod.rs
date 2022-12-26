@@ -56,6 +56,11 @@ pub struct Args {
     #[serde(default = "configuration_dir")]
     #[cfg(any(feature = "toml", feature = "toml", feature = "json"))]
     pub config: Option<PathBuf>,
+
+    /// Sort mirrorlists by download speed when exporting
+    #[arg(short, long)]
+    #[serde(default)]
+    pub rate: bool,
 }
 
 #[derive(clap::Args, Default, Debug, Clone, Eq, PartialEq, Deserialize)]

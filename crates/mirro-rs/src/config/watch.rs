@@ -74,6 +74,7 @@ fn async_watch(
                         config_file.filters.ipv6,
                         config_file.filters.completion_percent.unwrap(),
                         config_file.filters.age.unwrap_or_default(),
+                        config_file.general.rate,
                     );
 
                     let mut new_config = config.lock().unwrap();

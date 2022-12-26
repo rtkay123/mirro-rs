@@ -23,7 +23,7 @@ use crate::config::Configuration;
 use self::{
     inputs::{event::Events, InputEvent},
     io::{handler::IoAsyncHandler, IoEvent},
-    state::{App, AppReturn},
+    state::{App, AppReturn, PopUpState},
     ui::ui,
 };
 
@@ -83,13 +83,15 @@ async fn run_app(
         app.dispatch(IoEvent::Initialise).await;
     }
 
+    let popup_state = Arc::new(std::sync::Mutex::new(PopUpState::new()));
+
     loop {
         let mut app = app.lock().await;
 
-        terminal.draw(|f| ui(f, &mut app))?;
+        terminal.draw(|f| ui(f, &mut app, Arc::clone(&popup_state)))?;
 
         let result = match events.next().await {
-            InputEvent::Input(key) => app.dispatch_action(key).await,
+            InputEvent::Input(key) => app.dispatch_action(key, Arc::clone(&popup_state)).await,
             InputEvent::Tick => app.update_on_tick().await,
         };
 

@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use archlinux::{DateTime, Local, Mirror};
 
@@ -16,10 +19,10 @@ use tui_logger::TuiLoggerWidget;
 use super::{
     actions::{Action, Actions},
     dispatch::{filter::Protocol, sort::ViewSort},
-    state::App,
+    state::{App, PopUpState},
 };
 
-pub fn ui(f: &mut Frame<impl Backend>, app: &mut App) {
+pub fn ui(f: &mut Frame<impl Backend>, app: &mut App, popup: Arc<Mutex<PopUpState>>) {
     let area = f.size();
     check_size(&area);
 
@@ -69,11 +72,12 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &mut App) {
         draw_table(app, f, content_bar[1]);
     }
 
-    if app.show_popup {
+    if app.show_popup.load(std::sync::atomic::Ordering::Relaxed) {
         let block = Block::default()
             .borders(Borders::ALL)
             .style(Style::default().bg(Color::Black));
-        let p = Paragraph::new(app.popup_text.clone())
+        let popup_state = popup.lock().unwrap();
+        let p = Paragraph::new(popup_state.popup_text.clone())
             .block(block)
             .alignment(Alignment::Center);
         let area = centered_rect(60, 20, area);

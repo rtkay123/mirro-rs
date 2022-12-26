@@ -34,6 +34,7 @@ pub struct Configuration {
     pub isos: bool,
     pub completion_percent: u8,
     pub age: u16,
+    pub rate: bool,
 }
 
 impl Configuration {
@@ -52,6 +53,7 @@ impl Configuration {
         ipv6: bool,
         completion_percent: u8,
         age: u16,
+        rate: bool,
     ) -> Self {
         Self {
             outfile,
@@ -73,6 +75,7 @@ impl Configuration {
             isos,
             completion_percent,
             age,
+            rate,
         }
     }
 }

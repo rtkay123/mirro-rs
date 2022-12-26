@@ -49,6 +49,7 @@ async fn main() {
         } else {
             args.isos
         };
+
         (ipv4, ipv6, isos)
     };
 
@@ -98,9 +99,15 @@ async fn main() {
             .age
             .unwrap_or_else(|| config.filters.age.unwrap_or_default());
 
+        let rate = if !args.general.rate && config.general.rate {
+            true
+        } else {
+            args.general.rate
+        };
+
         config::Configuration::new(
             outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6,
-            completion, age,
+            completion, age, rate,
         )
     };
 
@@ -121,6 +128,7 @@ async fn main() {
         let completion = args.filters.completion_percent.unwrap_or(100);
 
         let age = args.filters.age.unwrap_or(0);
+        let rate = args.general.rate;
 
         config::Configuration::new(
             outfile,
@@ -136,6 +144,7 @@ async fn main() {
             args.filters.ipv6,
             completion,
             age,
+            rate,
         )
     };
 
