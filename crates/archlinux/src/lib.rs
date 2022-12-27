@@ -1,6 +1,9 @@
 use std::time::{Duration, Instant};
 
+use futures::future::BoxFuture;
+use futures::FutureExt;
 use hyper::client::HttpConnector;
+use hyper::header::LOCATION;
 use hyper::StatusCode;
 use hyper::{body::Buf, Body, Client, Request, Uri};
 use hyper_tls::HttpsConnector;
@@ -88,25 +91,39 @@ pub fn get_client() -> Client<HttpsConnector<HttpConnector>> {
     Client::builder().build::<_, Body>(HttpsConnector::new())
 }
 
-pub async fn rate_mirror<T: AsRef<str>>(
-    url: T,
+pub fn rate_mirror(
+    url: String,
     client: Client<HttpsConnector<HttpConnector>>,
-) -> Result<(Duration, T)> {
-    let uri = format!("{}{FILE_PATH}", url.as_ref()).parse::<Uri>()?;
+) -> BoxFuture<'static, Result<(Duration, String)>> {
+    async move {
+        let uri = format!("{url}{FILE_PATH}").parse::<Uri>()?;
 
-    let req = Request::builder()
-        .uri(&uri)
-        .body(Body::empty())
-        .map_err(|f| Error::Request(f.to_string()))?;
-    let now = Instant::now();
-    let response = client.request(req).await?;
-    if response.status() == StatusCode::OK {
-        Ok((now.elapsed(), url))
-    } else {
-        Err(Error::Rate {
-            qualified_url: uri,
-            url: url.as_ref().to_string(),
-            status_code: response.status(),
-        })
+        let req = Request::builder()
+            .uri(&uri)
+            .body(Body::empty())
+            .map_err(|f| Error::Request(f.to_string()))?;
+        let now = Instant::now();
+        let response = client.request(req).await?;
+        if response.status() == StatusCode::OK {
+            Ok((now.elapsed(), url))
+        } else if response.status() == StatusCode::MOVED_PERMANENTLY {
+            if let Some(new_uri) = response.headers().get(LOCATION) {
+                let new_url = String::from_utf8_lossy(new_uri.as_bytes());
+                rate_mirror(new_url.to_string(), client.clone()).await
+            } else {
+                Err(Error::Rate {
+                    qualified_url: uri,
+                    url,
+                    status_code: response.status(),
+                })
+            }
+        } else {
+            Err(Error::Rate {
+                qualified_url: uri,
+                url,
+                status_code: response.status(),
+            })
+        }
     }
+    .boxed()
 }
