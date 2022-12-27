@@ -19,7 +19,7 @@ pub use response::internal::*;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db";
+pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db.tar.gz";
 
 #[tracing::instrument]
 pub async fn archlinux(source: &str) -> Result<ArchLinux> {
