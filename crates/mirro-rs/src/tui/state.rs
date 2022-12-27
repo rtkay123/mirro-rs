@@ -198,8 +198,8 @@ impl App {
                                     .store(true, std::sync::atomic::Ordering::Relaxed);
 
                                 let mut mirrors = Vec::with_capacity(self.selected_mirrors.len());
-                                let mut failed: Vec<String> =
-                                    Vec::with_capacity(self.selected_mirrors.len());
+                                // let mut failed: Vec<String> =
+                                //     Vec::with_capacity(self.selected_mirrors.len());
                                 let client = archlinux::get_client();
                                 let mut set = JoinSet::new();
                                 for i in self.selected_mirrors.iter() {
@@ -222,15 +222,22 @@ impl App {
                                             Ok(Ok((duration, url))) => {
                                                 mirrors.push((duration, url));
                                             }
-                                            Ok(Err(cause)) => {
-                                                let result = cause.to_string();
-                                                let result =
-                                                    result.split_whitespace().collect_vec();
-                                                let cause = &result[0];
-                                                let url = &result[1];
-                                                error!("{cause} Failed to rate mirror for {url}");
-                                                failed.push(url.to_string());
-                                            }
+                                            Ok(Err(cause)) => match cause {
+                                                archlinux::Error::Connection(_) => todo!(),
+                                                archlinux::Error::Parse(_) => todo!(),
+                                                archlinux::Error::InvalidURL(_) => todo!(),
+                                                archlinux::Error::Rate {
+                                                    qualified_url,
+                                                    url,
+                                                    status_code,
+                                                } => {
+                                                    error!(
+                                                        "could not locate {} from {url}, reason=> {status_code}",
+                                                        qualified_url.to_string()
+                                                    );
+                                                }
+                                                archlinux::Error::Request(_) => todo!(),
+                                            },
                                             Err(res) => {
                                                 error!("{}", res.to_string());
                                             }
@@ -268,8 +275,6 @@ impl App {
                                                     let mut state = popup_state.lock().unwrap();
 
                                                     state.popup_text = format!("Your mirrorlist has been successfully exported to: {}",outfile.display());
-                                                    //self.popup_text = format!("Your mirrorlist has been successfully exported to: {}",outfile.display());
-                                                    //  self.show_popup. = true;
                                                 }
                                                 Err(e) => {
                                                     error!("{e}");
@@ -278,42 +283,6 @@ impl App {
                                         }
                                     }
                                 });
-
-                                //     let config = self.configuration.lock().unwrap();
-                                //     let outfile = &config.outfile;
-                                //     if let Some(dir) = outfile.parent() {
-                                //         if std::fs::create_dir_all(dir).is_ok() {
-                                //             let count = config.export as usize;
-                                //             let output =
-                                //                 &self.selected_mirrors[if self.selected_mirrors.len()
-                                //                     >= count
-                                //                 {
-                                //                     ..count
-                                //                 } else {
-                                //                     ..self.selected_mirrors.len()
-                                //                 }];
-                                //             match std::fs::OpenOptions::new()
-                                //                 .write(true)
-                                //                 .create(true)
-                                //                 .open(outfile)
-                                //             {
-                                //                 Ok(mut file) => {
-                                //                     for i in output.iter() {
-                                //                         if let Err(e) =
-                                //                             writeln!(file, "{}$repo/os/$arch", i.url)
-                                //                         {
-                                //                             error!("{e}");
-                                //                         }
-                                //                     }
-                                //                     self.popup_text = format!("Your mirrorlist has been successfully exported to: {}",outfile.display());
-                                //                     self.show_popup = true;
-                                //                 }
-                                //                 Err(e) => {
-                                //                     panic!("{e}");
-                                //                 }
-                                //             }
-                                //         }
-                                //    }
                             }
                         }
                         AppReturn::Continue

@@ -17,7 +17,27 @@ pub use chrono::*;
 pub use response::external::Protocol;
 pub use response::internal::*;
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("could not establish connection")]
+    Connection(#[from] hyper::Error),
+    #[error("could not parse response")]
+    Parse(#[from] serde_json::Error),
+    #[error("the url you provided `{0}` is invalid")]
+    InvalidURL(#[from] hyper::http::uri::InvalidUri),
+    #[error("could not find file (expected {qualified_url:?}, from {url:?}), server returned {status_code:?}")]
+    Rate {
+        qualified_url: Uri,
+        url: String,
+        status_code: StatusCode,
+    },
+    #[error("could not build request {0}")]
+    Request(String),
+}
+
+type Result<T> = std::result::Result<T, Error>;
 
 pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db.tar.gz";
 
@@ -41,7 +61,10 @@ async fn get_response(source: &str) -> Result<hyper::Response<Body>> {
     let uri = source.parse::<Uri>()?;
 
     trace!("building request");
-    let req = Request::builder().uri(uri).body(Body::empty())?;
+    let req = Request::builder()
+        .uri(uri)
+        .body(Body::empty())
+        .map_err(|f| Error::Request(f.to_string()))?;
     Ok(client.request(req).await?)
 }
 
@@ -71,12 +94,19 @@ pub async fn rate_mirror<T: AsRef<str>>(
 ) -> Result<(Duration, T)> {
     let uri = format!("{}{FILE_PATH}", url.as_ref()).parse::<Uri>()?;
 
-    let req = Request::builder().uri(uri).body(Body::empty())?;
+    let req = Request::builder()
+        .uri(&uri)
+        .body(Body::empty())
+        .map_err(|f| Error::Request(f.to_string()))?;
     let now = Instant::now();
     let response = client.request(req).await?;
     if response.status() == StatusCode::OK {
         Ok((now.elapsed(), url))
     } else {
-        Err(format!("{} {}", response.status(), url.as_ref()))?
+        Err(Error::Rate {
+            qualified_url: uri,
+            url: url.as_ref().to_string(),
+            status_code: response.status(),
+        })
     }
 }
