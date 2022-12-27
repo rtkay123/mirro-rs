@@ -53,13 +53,13 @@ pub struct Args {
 
     /// Specify alternate configuration file
     #[arg(long)]
-    #[serde(default = "configuration_dir")]
+    #[serde(skip)]
     #[cfg(any(feature = "toml", feature = "toml", feature = "json"))]
     pub config: Option<PathBuf>,
 
     /// Sort mirrorlists by download speed when exporting
     #[arg(short, long)]
-    #[serde(default)]
+    #[serde(default, rename = "rate-speed")]
     pub rate: bool,
 }
 
@@ -118,10 +118,10 @@ fn completion() -> Option<u8> {
     Some(100)
 }
 
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
-fn configuration_dir() -> Option<PathBuf> {
-    None
-}
+//#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+//fn configuration_dir() -> Option<PathBuf> {
+//    None
+//}
 
 fn url() -> Option<String> {
     Some(ARCH_URL.to_string())

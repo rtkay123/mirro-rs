@@ -1,5 +1,5 @@
 use std::{
-    sync::{Arc, Mutex},
+    sync::{atomic::AtomicBool, Arc, Mutex},
     time::Duration,
 };
 
@@ -11,7 +11,7 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, Cell, Clear, Paragraph, Row, Table},
+    widgets::{Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table},
     Frame,
 };
 use tui_logger::TuiLoggerWidget;
@@ -22,7 +22,12 @@ use super::{
     state::{App, PopUpState},
 };
 
-pub fn ui(f: &mut Frame<impl Backend>, app: &mut App, popup: Arc<Mutex<PopUpState>>) {
+pub fn ui(
+    f: &mut Frame<impl Backend>,
+    app: &mut App,
+    popup: Arc<Mutex<PopUpState>>,
+    exporting: Arc<AtomicBool>,
+) {
     let area = f.size();
     check_size(&area);
 
@@ -73,6 +78,10 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &mut App, popup: Arc<Mutex<PopUpStat
     }
 
     if app.show_popup.load(std::sync::atomic::Ordering::Relaxed) {
+        let rate_enabled = {
+            let state = app.configuration.lock().unwrap();
+            state.rate
+        };
         let block = Block::default()
             .borders(Borders::ALL)
             .style(Style::default().bg(Color::Black));
@@ -82,7 +91,15 @@ pub fn ui(f: &mut Frame<impl Backend>, app: &mut App, popup: Arc<Mutex<PopUpStat
             .alignment(Alignment::Center);
         let area = centered_rect(60, 20, area);
         f.render_widget(Clear, area);
-        f.render_widget(p, area);
+        if exporting.load(std::sync::atomic::Ordering::Relaxed) && rate_enabled {
+            let gauge = Gauge::default()
+                .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
+                .block(create_block("Exporting mirrors"))
+                .percent(50);
+            f.render_widget(gauge, area);
+        } else {
+            f.render_widget(p, area);
+        }
     }
 }
 

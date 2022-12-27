@@ -13,7 +13,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use log::{debug, LevelFilter};
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{atomic::AtomicBool, Arc},
+    time::Duration,
+};
 use tokio::sync::Mutex;
 
 use tui::{backend::CrosstermBackend, Terminal};
@@ -84,14 +87,25 @@ async fn run_app(
     }
 
     let popup_state = Arc::new(std::sync::Mutex::new(PopUpState::new()));
+    let exporting = Arc::new(AtomicBool::new(false));
 
     loop {
         let mut app = app.lock().await;
 
-        terminal.draw(|f| ui(f, &mut app, Arc::clone(&popup_state)))?;
+        terminal.draw(|f| {
+            ui(
+                f,
+                &mut app,
+                Arc::clone(&popup_state),
+                Arc::clone(&exporting),
+            )
+        })?;
 
         let result = match events.next().await {
-            InputEvent::Input(key) => app.dispatch_action(key, Arc::clone(&popup_state)).await,
+            InputEvent::Input(key) => {
+                app.dispatch_action(key, Arc::clone(&popup_state), Arc::clone(&exporting))
+                    .await
+            }
             InputEvent::Tick => app.update_on_tick().await,
         };
 
