@@ -233,15 +233,12 @@ impl App {
                                     let config = Arc::clone(&self.configuration);
 
                                     tokio::spawn(async move {
-                                        let mut current = 1;
+                                        let mut current = 0;
+                                        let len = set.len();
                                         while let Some(res) = set.join_next().await {
                                             match res {
                                                 Ok(Ok((duration, url))) => {
                                                     mirrors.push((duration, url));
-                                                    let value = (current as f32)
-                                                        / (set.len() as f32)
-                                                        * 100.0;
-                                                    let _ = progress_transmitter.send(value);
                                                 }
                                                 Ok(Err(cause)) => match cause {
                                                     archlinux::Error::Connection(e) => {
@@ -272,6 +269,8 @@ impl App {
                                                 }
                                             }
                                             current += 1;
+                                            let value = (current as f32) / (len as f32) * 100.0;
+                                            progress_transmitter.send(value).unwrap();
                                         }
 
                                         let results = {
@@ -291,6 +290,7 @@ impl App {
                                             }
                                         };
                                         write_to_file(config, &results, popup_state, exporting);
+                                        let _ = progress_transmitter.send(0.0); // reset progress
                                     });
                                 }
                             }
@@ -597,4 +597,6 @@ fn write_to_file(
         }
     }
     exporting.store(false, std::sync::atomic::Ordering::Relaxed);
+
+    info!("Your mirrorlist has been exported");
 }

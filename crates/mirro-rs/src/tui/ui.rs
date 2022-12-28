@@ -95,9 +95,10 @@ pub fn ui(
         let area = centered_rect(60, 20, area);
         f.render_widget(Clear, area);
         if exporting.load(std::sync::atomic::Ordering::Relaxed) && rate_enabled {
-            if let Ok(pos) = percentage.try_recv() {
+            while let Ok(pos) = percentage.try_recv() {
+                log::info!("exporting mirrors: progress {pos:.2}%");
                 let gauge = Gauge::default()
-                    .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
+                    .gauge_style(Style::default().fg(Color::Blue).bg(Color::Black))
                     .block(create_block("Exporting mirrors"))
                     .percent(pos as u16);
                 f.render_widget(gauge, area);
