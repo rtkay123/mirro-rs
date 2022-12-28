@@ -88,6 +88,7 @@ async fn run_app(
 
     let popup_state = Arc::new(std::sync::Mutex::new(PopUpState::new()));
     let exporting = Arc::new(AtomicBool::new(false));
+    let (pos_tx, pos_rx) = std::sync::mpsc::channel();
 
     loop {
         let mut app = app.lock().await;
@@ -98,13 +99,19 @@ async fn run_app(
                 &mut app,
                 Arc::clone(&popup_state),
                 Arc::clone(&exporting),
+                &pos_rx,
             )
         })?;
 
         let result = match events.next().await {
             InputEvent::Input(key) => {
-                app.dispatch_action(key, Arc::clone(&popup_state), Arc::clone(&exporting))
-                    .await
+                app.dispatch_action(
+                    key,
+                    Arc::clone(&popup_state),
+                    Arc::clone(&exporting),
+                    pos_tx.clone(),
+                )
+                .await
             }
             InputEvent::Tick => app.update_on_tick().await,
         };

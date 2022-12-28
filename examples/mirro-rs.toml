@@ -6,6 +6,7 @@ view = "alphabetical" # alphabetical mirror-count
 sort = "score" # percentage, duration, delay, score
 cache-ttl = 24
 url = "https://archlinux.org/mirrors/status/json/"
+rate-speed = true
 
 [filters]
 countries = [ ]

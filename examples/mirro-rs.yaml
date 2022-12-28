@@ -5,6 +5,7 @@ general:
   sort: score
   cache-ttl: 24
   url: https://archlinux.org/mirrors/status/json/
+  rate-speed: true
 filters:
   countries: []
   age: 24

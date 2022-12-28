@@ -1,5 +1,5 @@
 use std::{
-    sync::{atomic::AtomicBool, Arc, Mutex},
+    sync::{atomic::AtomicBool, mpsc::Receiver, Arc, Mutex},
     time::Duration,
 };
 
@@ -27,6 +27,7 @@ pub fn ui(
     app: &mut App,
     popup: Arc<Mutex<PopUpState>>,
     exporting: Arc<AtomicBool>,
+    percentage: &Receiver<f32>,
 ) {
     let area = f.size();
     check_size(&area);
@@ -77,6 +78,11 @@ pub fn ui(
         draw_table(app, f, content_bar[1]);
     }
 
+    let p = {
+        let popup_state = popup.lock().unwrap();
+        Paragraph::new(popup_state.popup_text.clone())
+    };
+
     if app.show_popup.load(std::sync::atomic::Ordering::Relaxed) {
         let rate_enabled = {
             let state = app.configuration.lock().unwrap();
@@ -85,18 +91,17 @@ pub fn ui(
         let block = Block::default()
             .borders(Borders::ALL)
             .style(Style::default().bg(Color::Black));
-        let popup_state = popup.lock().unwrap();
-        let p = Paragraph::new(popup_state.popup_text.clone())
-            .block(block)
-            .alignment(Alignment::Center);
+        let p = p.block(block).alignment(Alignment::Center);
         let area = centered_rect(60, 20, area);
         f.render_widget(Clear, area);
         if exporting.load(std::sync::atomic::Ordering::Relaxed) && rate_enabled {
-            let gauge = Gauge::default()
-                .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
-                .block(create_block("Exporting mirrors"))
-                .percent(50);
-            f.render_widget(gauge, area);
+            if let Ok(pos) = percentage.try_recv() {
+                let gauge = Gauge::default()
+                    .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
+                    .block(create_block("Exporting mirrors"))
+                    .percent(pos as u16);
+                f.render_widget(gauge, area);
+            }
         } else {
             f.render_widget(p, area);
         }

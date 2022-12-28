@@ -1,7 +1,7 @@
 use archlinux::{ArchLinux, Country, DateTime, Utc};
 use std::{
     io::Write,
-    sync::{atomic::AtomicBool, Arc, Mutex},
+    sync::{atomic::AtomicBool, mpsc::Sender, Arc, Mutex},
 };
 use tokio::task::JoinSet;
 
@@ -101,6 +101,7 @@ impl App {
         key: Key,
         popup_state: Arc<std::sync::Mutex<PopUpState>>,
         exporting: Arc<AtomicBool>,
+        progress_transmitter: Sender<f32>,
     ) -> AppReturn {
         if let Some(action) = self.actions.find(key) {
             if key.is_exit() && !self.show_input {
@@ -208,13 +209,13 @@ impl App {
                                     config.rate
                                 };
 
-                                if !rate_enabled {
-                                    let results = self
-                                        .selected_mirrors
-                                        .iter()
-                                        .map(|f| f.url.to_owned())
-                                        .collect_vec();
+                                let results = self
+                                    .selected_mirrors
+                                    .iter()
+                                    .map(|f| f.url.to_owned())
+                                    .collect_vec();
 
+                                if !rate_enabled {
                                     write_to_file(
                                         Arc::clone(&self.configuration),
                                         &results,
@@ -232,15 +233,26 @@ impl App {
                                     let config = Arc::clone(&self.configuration);
 
                                     tokio::spawn(async move {
+                                        let mut current = 1;
                                         while let Some(res) = set.join_next().await {
                                             match res {
                                                 Ok(Ok((duration, url))) => {
                                                     mirrors.push((duration, url));
+                                                    let value = (current as f32)
+                                                        / (set.len() as f32)
+                                                        * 100.0;
+                                                    let _ = progress_transmitter.send(value);
                                                 }
                                                 Ok(Err(cause)) => match cause {
-                                                    archlinux::Error::Connection(_) => todo!(),
-                                                    archlinux::Error::Parse(_) => todo!(),
-                                                    archlinux::Error::InvalidURL(_) => todo!(),
+                                                    archlinux::Error::Connection(e) => {
+                                                        error!("{e}");
+                                                    }
+                                                    archlinux::Error::Parse(e) => {
+                                                        error!("{e}");
+                                                    }
+                                                    archlinux::Error::InvalidURL(e) => {
+                                                        error!("{e}");
+                                                    }
                                                     archlinux::Error::Rate {
                                                         qualified_url,
                                                         url,
@@ -251,22 +263,33 @@ impl App {
                                                         qualified_url.to_string()
                                                     );
                                                     }
-                                                    archlinux::Error::Request(_) => todo!(),
+                                                    archlinux::Error::Request(e) => {
+                                                        error!("{e}");
+                                                    }
                                                 },
                                                 Err(res) => {
                                                     error!("{}", res.to_string());
                                                 }
                                             }
+                                            current += 1;
                                         }
 
-                                        mirrors.sort_by(|(duration_a, _), (duration_b, _)| {
-                                            duration_a.cmp(duration_b)
-                                        });
-
-                                        let results = mirrors
-                                            .iter()
-                                            .map(|(_, url)| url.to_owned())
-                                            .collect_vec();
+                                        let results = {
+                                            if !mirrors.is_empty() {
+                                                mirrors.sort_by(
+                                                    |(duration_a, _), (duration_b, _)| {
+                                                        duration_a.cmp(duration_b)
+                                                    },
+                                                );
+                                                mirrors
+                                                    .iter()
+                                                    .map(|(_, url)| url.to_owned())
+                                                    .collect_vec()
+                                            } else {
+                                                warn!("Exporting mirrors without rating...");
+                                                results
+                                            }
+                                        };
                                         write_to_file(config, &results, popup_state, exporting);
                                     });
                                 }
