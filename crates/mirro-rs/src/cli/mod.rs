@@ -61,6 +61,10 @@ pub struct Args {
     #[arg(short, long)]
     #[serde(default, rename = "rate-speed")]
     pub rate: bool,
+
+    /// Connection timeout in seconds
+    #[arg(long = "timeout")]
+    pub timeout: Option<u64>,
 }
 
 #[derive(clap::Args, Default, Debug, Clone, Eq, PartialEq, Deserialize)]
@@ -117,11 +121,6 @@ fn enable() -> bool {
 fn completion() -> Option<u8> {
     Some(100)
 }
-
-//#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
-//fn configuration_dir() -> Option<PathBuf> {
-//    None
-//}
 
 fn url() -> Option<String> {
     Some(ARCH_URL.to_string())

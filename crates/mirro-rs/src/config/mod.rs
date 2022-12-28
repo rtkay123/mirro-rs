@@ -35,6 +35,7 @@ pub struct Configuration {
     pub completion_percent: u8,
     pub age: u16,
     pub rate: bool,
+    pub connection_timeout: Option<u64>,
 }
 
 impl Configuration {
@@ -54,6 +55,7 @@ impl Configuration {
         completion_percent: u8,
         age: u16,
         rate: bool,
+        connection_timeout: Option<u64>,
     ) -> Self {
         Self {
             outfile,
@@ -76,6 +78,7 @@ impl Configuration {
             completion_percent,
             age,
             rate,
+            connection_timeout,
         }
     }
 }

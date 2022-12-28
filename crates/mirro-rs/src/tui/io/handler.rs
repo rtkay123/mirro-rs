@@ -129,14 +129,15 @@ async fn get_new_mirrors(
 ) -> Result<()> {
     let url = Arc::new(Mutex::new(String::default()));
     let inner = Arc::clone(&url);
-    {
+    let timeout = {
         let mut val = inner.lock().await;
         let source = config.lock().unwrap();
         *val = source.url.clone();
-    }
+        source.connection_timeout
+    };
     let strs = url.lock().await;
 
-    match archlinux::archlinux_with_raw(&strs).await {
+    match archlinux::archlinux_with_raw(&strs, timeout).await {
         Ok((mirrors, str_value)) => {
             if let Some(cache) = cache_file {
                 if let Err(e) = std::fs::write(cache, str_value) {

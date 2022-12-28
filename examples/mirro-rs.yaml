@@ -6,6 +6,7 @@ general:
   cache-ttl: 24
   url: https://archlinux.org/mirrors/status/json/
   rate-speed: true
+  timeout: 5
 filters:
   countries: []
   age: 24

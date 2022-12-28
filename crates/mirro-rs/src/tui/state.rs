@@ -193,14 +193,17 @@ impl App {
                             if self.selected_mirrors.is_empty() {
                                 warn!("You haven't selected any mirrors yet");
                             } else {
-                                {
+                                let connection_timeout = {
                                     exporting.store(true, std::sync::atomic::Ordering::Relaxed);
                                     let mut state = popup_state.lock().unwrap();
                                     state.popup_text =
                                         String::from("exporting your mirrors, please wait");
                                     self.show_popup
                                         .store(true, std::sync::atomic::Ordering::Relaxed);
-                                }
+
+                                    let app = self.configuration.lock().unwrap();
+                                    app.connection_timeout
+                                };
 
                                 let mut mirrors = Vec::with_capacity(self.selected_mirrors.len());
 
@@ -223,7 +226,7 @@ impl App {
                                         exporting,
                                     )
                                 } else {
-                                    let client = archlinux::get_client();
+                                    let client = archlinux::get_client(connection_timeout);
                                     let mut set = JoinSet::new();
                                     for i in self.selected_mirrors.iter() {
                                         let url = i.url.to_owned();

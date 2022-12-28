@@ -45,8 +45,8 @@ type Result<T> = std::result::Result<T, Error>;
 pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db.tar.gz";
 
 #[tracing::instrument]
-pub async fn archlinux(source: &str) -> Result<ArchLinux> {
-    let response = get_response(source).await?;
+pub async fn archlinux(source: &str, with_timeout: Option<u64>) -> Result<ArchLinux> {
+    let response = get_response(source, with_timeout).await?;
 
     let bytes = hyper::body::aggregate(response.into_body()).await?;
 
@@ -58,9 +58,9 @@ pub async fn archlinux(source: &str) -> Result<ArchLinux> {
     Ok(body)
 }
 
-async fn get_response(source: &str) -> Result<hyper::Response<Body>> {
+async fn get_response(source: &str, with_timeout: Option<u64>) -> Result<hyper::Response<Body>> {
     trace!("creating http client");
-    let client = get_client();
+    let client = get_client(with_timeout);
     let uri = source.parse::<Uri>()?;
 
     trace!("building request");
@@ -71,8 +71,11 @@ async fn get_response(source: &str) -> Result<hyper::Response<Body>> {
     Ok(client.request(req).await?)
 }
 
-pub async fn archlinux_with_raw(source: &str) -> Result<(ArchLinux, String)> {
-    let response = get_response(source).await?;
+pub async fn archlinux_with_raw(
+    source: &str,
+    with_timeout: Option<u64>,
+) -> Result<(ArchLinux, String)> {
+    let response = get_response(source, with_timeout).await?;
 
     let bytes = hyper::body::aggregate(response.into_body()).await?;
 
@@ -87,13 +90,21 @@ pub fn archlinux_fallback(contents: &str) -> Result<ArchLinux> {
     Ok(vals)
 }
 
-pub fn get_client() -> Client<HttpsConnector<HttpConnector>> {
-    Client::builder().build::<_, Body>(HttpsConnector::new())
+pub fn get_client(
+    with_timeout: Option<u64>,
+) -> Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>> {
+    let timeout = with_timeout.map(Duration::from_secs);
+    let h = HttpsConnector::new();
+    let mut connector = hyper_timeout::TimeoutConnector::new(h);
+    connector.set_connect_timeout(timeout);
+    connector.set_read_timeout(timeout);
+    connector.set_write_timeout(timeout);
+    Client::builder().build::<_, hyper::Body>(connector)
 }
 
 pub fn rate_mirror(
     url: String,
-    client: Client<HttpsConnector<HttpConnector>>,
+    client: Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>>,
 ) -> BoxFuture<'static, Result<(Duration, String)>> {
     async move {
         let uri = format!("{url}{FILE_PATH}").parse::<Uri>()?;

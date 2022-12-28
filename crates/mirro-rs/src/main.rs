@@ -105,9 +105,15 @@ async fn main() {
             args.general.rate
         };
 
+        let timoeut = if args.general.timeout.is_none() && config.general.timeout.is_some() {
+            config.general.timeout
+        } else {
+            args.general.timeout
+        };
+
         config::Configuration::new(
             outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6,
-            completion, age, rate,
+            completion, age, rate, timoeut,
         )
     };
 
@@ -129,6 +135,7 @@ async fn main() {
 
         let age = args.filters.age.unwrap_or(0);
         let rate = args.general.rate;
+        let timeout = args.general.timeout;
 
         config::Configuration::new(
             outfile,
@@ -145,6 +152,7 @@ async fn main() {
             completion,
             age,
             rate,
+            timeout,
         )
     };
 
