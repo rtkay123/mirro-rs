@@ -12,8 +12,6 @@ COPY . .
 
 RUN /root/.cargo/bin/cargo build --release --all-features
 
-RUN strip target/release/mirro-rs
-
 FROM alpine:3.17.0
 
 RUN apk add --no-cache libgcc
