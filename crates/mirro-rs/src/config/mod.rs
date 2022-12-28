@@ -29,9 +29,6 @@ pub struct Configuration {
     pub country: Vec<String>,
     pub ttl: u16,
     pub url: String,
-    pub ipv4: bool,
-    pub ipv6: bool,
-    pub isos: bool,
     pub completion_percent: u8,
     pub age: u16,
     pub rate: bool,
@@ -43,7 +40,7 @@ impl Configuration {
     pub fn new(
         outfile: PathBuf,
         export: u16,
-        filters: Vec<Protocol>,
+        mut filters: Vec<Protocol>,
         view: ViewSort,
         sort: SelectionSort,
         country: Vec<String>,
@@ -57,6 +54,15 @@ impl Configuration {
         rate: bool,
         connection_timeout: Option<u64>,
     ) -> Self {
+        if ipv4 {
+            filters.push(Protocol::Ipv4)
+        }
+        if ipv6 {
+            filters.push(Protocol::Ipv6)
+        }
+        if isos {
+            filters.push(Protocol::Isos)
+        }
         Self {
             outfile,
             export,
@@ -67,14 +73,10 @@ impl Configuration {
                 SelectionSort::Delay => ExportSort::MirroringDelay,
                 SelectionSort::Duration => ExportSort::Duration,
                 SelectionSort::Score => ExportSort::Score,
-                SelectionSort::Rate => todo!(),
             },
             country,
             ttl,
             url,
-            ipv4,
-            ipv6,
-            isos,
             completion_percent,
             age,
             rate,

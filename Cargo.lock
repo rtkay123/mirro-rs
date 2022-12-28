@@ -18,23 +18,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2cb2f989d18dd141ab8ae82f64d1a8cdd37e0840f73a406896cf5e99502fab61"
 
 [[package]]
-name = "archlinux"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "futures",
- "hyper",
- "hyper-timeout",
- "hyper-tls",
- "itertools",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -757,13 +740,13 @@ name = "mirro-rs"
 version = "0.1.0-alpha.0"
 dependencies = [
  "anyhow",
- "archlinux",
  "cfg-if",
  "clap",
  "crossterm",
  "dirs",
  "itertools",
  "log",
+ "mirrors-arch",
  "notify",
  "serde",
  "serde_json",
@@ -773,6 +756,23 @@ dependencies = [
  "tui",
  "tui-logger",
  "unicode-width",
+]
+
+[[package]]
+name = "mirrors-arch"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "futures",
+ "hyper",
+ "hyper-timeout",
+ "hyper-tls",
+ "itertools",
+ "log",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -1329,19 +1329,7 @@ checksum = "8ce8c33a8d48bd45d624a6e523445fd21ec13d3653cd51f681abf67418f54eb8"
 dependencies = [
  "cfg-if",
  "pin-project-lite",
- "tracing-attributes",
  "tracing-core",
-]
-
-[[package]]
-name = "tracing-attributes"
-version = "0.1.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4017f8f45139870ca7e672686113917c71c7a6e02d4924eda67186083c03081a"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

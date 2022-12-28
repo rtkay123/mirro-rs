@@ -28,7 +28,7 @@ impl IoAsyncHandler {
         if is_fresh {
             match std::fs::read_to_string(cache_file.as_ref().unwrap()) {
                 Ok(contents) => {
-                    let result = archlinux::archlinux_fallback(&contents);
+                    let result = archlinux::parse_local(&contents);
                     match result {
                         Ok(mirrors) => {
                             show_stats(&mirrors.countries, is_fresh);
@@ -137,7 +137,7 @@ async fn get_new_mirrors(
     };
     let strs = url.lock().await;
 
-    match archlinux::archlinux_with_raw(&strs, timeout).await {
+    match archlinux::get_mirrors_with_raw(&strs, timeout).await {
         Ok((mirrors, str_value)) => {
             if let Some(cache) = cache_file {
                 if let Err(e) = std::fs::write(cache, str_value) {
@@ -155,7 +155,7 @@ async fn get_new_mirrors(
             let file = cache_file.map(|f| {
                 std::fs::read_to_string(f)
                     .ok()
-                    .map(|f| archlinux::archlinux_fallback(&f).ok())
+                    .map(|f| archlinux::parse_local(&f).ok())
             });
             match file {
                 Some(Some(Some(mirrors))) => {

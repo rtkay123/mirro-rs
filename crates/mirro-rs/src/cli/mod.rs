@@ -111,7 +111,6 @@ pub enum SelectionSort {
     Duration,
     #[default]
     Score,
-    Rate,
 }
 
 fn enable() -> bool {

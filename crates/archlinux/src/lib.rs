@@ -1,13 +1,21 @@
+#![warn(
+    missing_docs,
+    rustdoc::broken_intra_doc_links,
+    missing_debug_implementations
+)]
+
+//! # mirrors-arch
 use std::time::{Duration, Instant};
 
-use futures::future::BoxFuture;
-use futures::FutureExt;
-use hyper::client::HttpConnector;
-use hyper::header::LOCATION;
-use hyper::StatusCode;
-use hyper::{body::Buf, Body, Client, Request, Uri};
+use futures::{future::BoxFuture, FutureExt};
+use hyper::{
+    client::HttpConnector,
+    header::LOCATION,
+    StatusCode,
+    {body::Buf, Body, Client, Request, Uri},
+};
 use hyper_tls::HttpsConnector;
-use tracing::{info, trace};
+use log::{info, trace};
 
 use crate::response::external::Root;
 
@@ -16,27 +24,38 @@ mod tests;
 
 mod response;
 #[cfg(feature = "time")]
+#[doc(no_inline)]
 pub use chrono::*;
-pub use response::external::Protocol;
-pub use response::internal::*;
+
+pub use response::{external::Protocol, internal::*};
 
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+/// Error type definitions returned by the crate
 pub enum Error {
+    /// The connection could not be made (perhaps a network error is
+    /// the cause)
     #[error("could not establish connection")]
     Connection(#[from] hyper::Error),
+    /// The response could not be parsed to an internal type
     #[error("could not parse response")]
     Parse(#[from] serde_json::Error),
+    /// The constructed URL is invalid
     #[error("the url you provided `{0}` is invalid")]
     InvalidURL(#[from] hyper::http::uri::InvalidUri),
+    /// The mirror could not be rated
     #[error("could not find file (expected {qualified_url:?}, from {url:?}), server returned {status_code:?}")]
     Rate {
+        /// The URL including the filepath that was sent in the request
         qualified_url: Uri,
+        /// The URL of the particular mirror
         url: String,
+        /// The status code returned by the server
         status_code: StatusCode,
     },
     #[error("could not build request {0}")]
+    /// There was an error performing the request
     Request(String),
 }
 
@@ -44,8 +63,24 @@ type Result<T> = std::result::Result<T, Error>;
 
 pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db.tar.gz";
 
-#[tracing::instrument]
-pub async fn archlinux(source: &str, with_timeout: Option<u64>) -> Result<ArchLinux> {
+/// Get ArchLinux mirrors from an `json` endpoint and return them in a [minified](ArchLinux) format
+///
+/// # Parameters
+///
+/// - `source` - The URL to query for a mirrorlist
+/// - `with_timeout` - Connection timeout (in seconds) to be used in network requests
+///
+/// # Example
+///
+/// ```rust
+/// # use mirrors_arch::get_mirrors;
+/// # async fn foo()->Result<(), Box<dyn std::error::Error>>{
+/// let arch_mirrors = get_mirrors("https://archlinux.org/mirrors/status/json/", None).await?;
+/// println!("{arch_mirrors:?}");
+/// #    Ok(())
+/// # }
+/// ```
+pub async fn get_mirrors(source: &str, with_timeout: Option<u64>) -> Result<ArchLinux> {
     let response = get_response(source, with_timeout).await?;
 
     let bytes = hyper::body::aggregate(response.into_body()).await?;
@@ -71,7 +106,21 @@ async fn get_response(source: &str, with_timeout: Option<u64>) -> Result<hyper::
     Ok(client.request(req).await?)
 }
 
-pub async fn archlinux_with_raw(
+/// The same as [get_mirrors](get_mirrors) but returns a tuple including the json as a
+/// `String`
+///
+/// # Example
+///
+/// ```rust
+/// # use mirrors_arch::get_mirrors_with_raw;
+/// # async fn foo()->Result<(), Box<dyn std::error::Error>>{
+/// let timeout = Some(10);
+/// let arch_mirrors = get_mirrors_with_raw("https://my-url.com/json/", timeout).await?;
+/// println!("{arch_mirrors:?}");
+/// #    Ok(())
+/// # }
+/// ```
+pub async fn get_mirrors_with_raw(
     source: &str,
     with_timeout: Option<u64>,
 ) -> Result<(ArchLinux, String)> {
@@ -85,11 +134,42 @@ pub async fn archlinux_with_raw(
     Ok((ArchLinux::from(root), value))
 }
 
-pub fn archlinux_fallback(contents: &str) -> Result<ArchLinux> {
+/// Parses a `string slice` to the [ArchLinux](ArchLinux) type
+///
+/// # Parameters
+/// - `contents` - A `json` string slice to be parsed and returned as a [mirrorlist](ArchLinux)
+///
+/// # Example
+///
+/// ```rust
+/// # use mirrors_arch::parse_local;
+/// # async fn foo()->Result<(), Box<dyn std::error::Error>>{
+/// let json = std::fs::read_to_string("archmirrors.json")?;
+/// let arch_mirrors = parse_local(&json)?;
+/// println!("{arch_mirrors:?}");
+/// #  Ok(())
+/// # }
+/// ```
+pub fn parse_local(contents: &str) -> Result<ArchLinux> {
     let vals = ArchLinux::from(serde_json::from_str::<Root>(contents)?);
     Ok(vals)
 }
 
+/// Gets a client that can be used to rate mirrors
+///
+/// # Parameters
+/// - `with_timeout` - an optional connection timeout to be used when rating the mirrors
+///
+/// # Example
+///
+/// ```rust
+/// # use mirrors_arch::get_client;
+/// # async fn foo()->Result<(), Box<dyn std::error::Error>>{
+/// let timeout = Some(5);
+/// let client = get_client(timeout);
+/// #  Ok(())
+/// # }
+/// ```
 pub fn get_client(
     with_timeout: Option<u64>,
 ) -> Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>> {
@@ -102,6 +182,23 @@ pub fn get_client(
     Client::builder().build::<_, hyper::Body>(connector)
 }
 
+/// Queries a mirrorlist and calculates how long it took to get a response
+///
+/// # Parameters
+/// - `url` - The mirrorlist
+/// - `client` - The client returned from [get_client](get_client)
+///
+/// # Example
+///
+/// ```rust
+/// # use mirrors_arch::{get_client, rate_mirror};
+/// # async fn foo()->Result<(), Box<dyn std::error::Error>>{
+/// # let url = String::default();
+/// # let client = get_client(Some(5));
+/// let (duration, url) = rate_mirror(url, client).await?;
+/// #  Ok(())
+/// # }
+/// ```
 pub fn rate_mirror(
     url: String,
     client: Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>>,

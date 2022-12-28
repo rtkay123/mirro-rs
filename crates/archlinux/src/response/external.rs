@@ -41,9 +41,13 @@ pub(crate) struct Url {
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
+/// Protocols serving the mirrors
 pub enum Protocol {
+    /// rsync
     Rsync,
+    /// http
     Http,
+    /// https
     Https,
 }
 

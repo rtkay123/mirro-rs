@@ -577,12 +577,13 @@ fn write_to_file(
             }];
             match std::fs::OpenOptions::new()
                 .write(true)
+                .truncate(true)
                 .create(true)
                 .open(outfile)
             {
                 Ok(mut file) => {
                     for url in output.iter() {
-                        if let Err(e) = writeln!(file, "{url}$repo/os/$arch") {
+                        if let Err(e) = writeln!(file, "Server = {url}$repo/os/$arch") {
                             error!("{e}");
                         }
                     }
