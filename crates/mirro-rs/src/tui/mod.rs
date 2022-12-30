@@ -50,8 +50,8 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
         let popup_state = Arc::clone(&popup_state);
         tokio::spawn(async move {
             let mut handler = IoAsyncHandler::new(inner, popup_state);
+            debug!("Getting Arch Linux mirrors. Please wait");
             while let Some(io_event) = sync_io_rx.recv().await {
-                debug!("Getting Arch Linux mirrors. Please wait");
                 handler
                     .handle_io_event(io_event, Arc::clone(&configuration))
                     .await;
