@@ -360,11 +360,7 @@ impl App {
     }
 
     pub async fn dispatch(&mut self, action: IoEvent) {
-        self.show_popup
-            .store(true, std::sync::atomic::Ordering::Relaxed);
         if let Err(e) = self.io_tx.send(action).await {
-            self.show_popup
-                .store(false, std::sync::atomic::Ordering::Relaxed);
             error!("Error from dispatch {e}");
         };
     }

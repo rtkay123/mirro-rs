@@ -3,6 +3,7 @@ use std::{io::ErrorKind, path::PathBuf};
 use std::path::Path;
 
 use itertools::Itertools;
+use log::error;
 
 use crate::cli::ArgConfig;
 
@@ -40,7 +41,7 @@ pub fn read_config_file(file: Option<impl AsRef<Path>>) -> (ArgConfig, Option<Pa
 
 fn check_file(file: &PathBuf, backup: Option<&PathBuf>) -> Option<(ArgConfig, Option<PathBuf>)> {
     let err = |e| {
-        eprintln!("{e}");
+        error!("{e}");
     };
 
     let call_backup = |backup: Option<&PathBuf>| {
