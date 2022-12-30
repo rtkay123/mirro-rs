@@ -216,7 +216,7 @@ pub fn rate_mirror(
             Ok((now.elapsed(), url))
         } else if response.status() == StatusCode::MOVED_PERMANENTLY {
             if let Some(new_uri) = response.headers().get(LOCATION) {
-                let new_url = String::from_utf8_lossy(new_uri.as_bytes());
+                let new_url = String::from_utf8_lossy(new_uri.as_bytes()).replace(FILE_PATH, "");
                 rate_mirror(new_url.to_string(), client.clone()).await
             } else {
                 Err(Error::Rate {

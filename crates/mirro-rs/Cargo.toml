@@ -20,7 +20,7 @@ notify = { version = "5.0.0", optional = true }
 serde = { version = "1.0.151", features = ["derive"] }
 serde_json = { version = "1.0.91", optional = true }
 serde_yaml = { version = "0.9.16", optional = true }
-tokio = { version = "1.23.0", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.23.0", features = ["rt-multi-thread", "macros", "fs"] }
 toml = { version = "0.5.10", optional = true }
 tui = "0.19.0"
 tui-logger = "0.8.1"

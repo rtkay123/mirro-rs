@@ -45,17 +45,20 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
     tui_logger::init_logger(LevelFilter::Trace).unwrap();
     tui_logger::set_default_level(log::LevelFilter::Debug);
 
-    tokio::spawn(async move {
-        let mut handler = IoAsyncHandler::new(inner);
-        while let Some(io_event) = sync_io_rx.recv().await {
-            debug!("Getting Arch Linux mirrors. Please wait");
-            handler
-                .handle_io_event(io_event, Arc::clone(&configuration))
-                .await;
-        }
-    });
-
-    let res = run_app(&mut terminal, Arc::clone(&app)).await;
+    let popup_state = Arc::new(Mutex::new(PopUpState::new()));
+    {
+        let popup_state = Arc::clone(&popup_state);
+        tokio::spawn(async move {
+            let mut handler = IoAsyncHandler::new(inner, popup_state);
+            while let Some(io_event) = sync_io_rx.recv().await {
+                debug!("Getting Arch Linux mirrors. Please wait");
+                handler
+                    .handle_io_event(io_event, Arc::clone(&configuration))
+                    .await;
+            }
+        });
+    }
+    let res = run_app(&mut terminal, Arc::clone(&app), popup_state).await;
 
     disable_raw_mode()?;
     execute!(
@@ -75,6 +78,7 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
 async fn run_app(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
     app: Arc<Mutex<App>>,
+    popup_state: Arc<Mutex<PopUpState>>,
 ) -> std::io::Result<()> {
     let tick_rate = Duration::from_millis(100);
     let mut events = Events::new(tick_rate);
@@ -86,32 +90,19 @@ async fn run_app(
         app.dispatch(IoEvent::Initialise).await;
     }
 
-    let popup_state = Arc::new(std::sync::Mutex::new(PopUpState::new()));
     let exporting = Arc::new(AtomicBool::new(false));
     let (pos_tx, pos_rx) = std::sync::mpsc::channel();
 
     loop {
         let mut app = app.lock().await;
+        let popup = popup_state.lock().await;
 
-        terminal.draw(|f| {
-            ui(
-                f,
-                &mut app,
-                Arc::clone(&popup_state),
-                Arc::clone(&exporting),
-                &pos_rx,
-            )
-        })?;
+        terminal.draw(|f| ui(f, &mut app, &popup, Arc::clone(&exporting), &pos_rx))?;
 
         let result = match events.next().await {
             InputEvent::Input(key) => {
-                app.dispatch_action(
-                    key,
-                    Arc::clone(&popup_state),
-                    Arc::clone(&exporting),
-                    pos_tx.clone(),
-                )
-                .await
+                app.dispatch_action(key, Arc::clone(&exporting), pos_tx.clone())
+                    .await
             }
             InputEvent::Tick => app.update_on_tick().await,
         };

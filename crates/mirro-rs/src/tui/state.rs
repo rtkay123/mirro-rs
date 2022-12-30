@@ -1,9 +1,5 @@
 use archlinux::{ArchLinux, Country, DateTime, Utc};
-use std::{
-    io::Write,
-    sync::{atomic::AtomicBool, mpsc::Sender, Arc, Mutex},
-};
-use tokio::task::JoinSet;
+use std::sync::{atomic::AtomicBool, mpsc::Sender, Arc, Mutex};
 
 use crate::config::Configuration;
 
@@ -44,17 +40,18 @@ pub struct App {
     pub table_viewport_height: u16,
     pub configuration: Arc<Mutex<Configuration>>,
     pub show_insync: bool,
-    pub show_popup: AtomicBool,
 }
 
 pub struct PopUpState {
     pub popup_text: String,
+    pub visible: bool,
 }
 
 impl PopUpState {
     pub fn new() -> Self {
         Self {
             popup_text: String::from("Getting mirrors... please wait..."),
+            visible: true,
         }
     }
 }
@@ -81,7 +78,6 @@ impl App {
         drop(show_sync);
         Self {
             actions: vec![Action::Quit].into(),
-            show_popup: AtomicBool::new(true),
             show_input: false,
             mirrors: None,
             io_tx,
@@ -99,7 +95,6 @@ impl App {
     pub async fn dispatch_action(
         &mut self,
         key: Key,
-        popup_state: Arc<std::sync::Mutex<PopUpState>>,
         exporting: Arc<AtomicBool>,
         progress_transmitter: Sender<f32>,
     ) -> AppReturn {
@@ -131,9 +126,7 @@ impl App {
             } else {
                 match action {
                     Action::ClosePopUp => {
-                        // self.show_popup = !self.show_popup;
-                        self.show_popup
-                            .store(false, std::sync::atomic::Ordering::Relaxed);
+                        let _ = self.io_tx.send(IoEvent::ClosePopUp).await;
                         AppReturn::Continue
                     }
                     Action::Quit => AppReturn::Continue,
@@ -193,109 +186,13 @@ impl App {
                             if self.selected_mirrors.is_empty() {
                                 warn!("You haven't selected any mirrors yet");
                             } else {
-                                let connection_timeout = {
-                                    exporting.store(true, std::sync::atomic::Ordering::Relaxed);
-                                    let mut state = popup_state.lock().unwrap();
-                                    state.popup_text =
-                                        String::from("exporting your mirrors, please wait");
-                                    self.show_popup
-                                        .store(true, std::sync::atomic::Ordering::Relaxed);
-
-                                    let app = self.configuration.lock().unwrap();
-                                    app.connection_timeout
-                                };
-
-                                let mut mirrors = Vec::with_capacity(self.selected_mirrors.len());
-
-                                let rate_enabled = {
-                                    let config = self.configuration.lock().unwrap();
-                                    config.rate
-                                };
-
-                                let results = self
-                                    .selected_mirrors
-                                    .iter()
-                                    .map(|f| f.url.to_owned())
-                                    .collect_vec();
-
-                                if !rate_enabled {
-                                    write_to_file(
-                                        Arc::clone(&self.configuration),
-                                        &results,
-                                        popup_state,
-                                        exporting,
-                                    )
-                                } else {
-                                    let client = archlinux::get_client(connection_timeout);
-                                    let mut set = JoinSet::new();
-                                    for i in self.selected_mirrors.iter() {
-                                        let url = i.url.to_owned();
-                                        set.spawn(archlinux::rate_mirror(url, client.clone()));
-                                    }
-
-                                    let config = Arc::clone(&self.configuration);
-
-                                    tokio::spawn(async move {
-                                        let mut current = 0;
-                                        let len = set.len();
-                                        while let Some(res) = set.join_next().await {
-                                            match res {
-                                                Ok(Ok((duration, url))) => {
-                                                    mirrors.push((duration, url));
-                                                }
-                                                Ok(Err(cause)) => match cause {
-                                                    archlinux::Error::Connection(e) => {
-                                                        error!("{e}");
-                                                    }
-                                                    archlinux::Error::Parse(e) => {
-                                                        error!("{e}");
-                                                    }
-                                                    archlinux::Error::InvalidURL(e) => {
-                                                        error!("{e}");
-                                                    }
-                                                    archlinux::Error::Rate {
-                                                        qualified_url,
-                                                        url,
-                                                        status_code,
-                                                    } => {
-                                                        error!(
-                                                        "could not locate {} from {url}, reason=> {status_code}",
-                                                        qualified_url.to_string()
-                                                    );
-                                                    }
-                                                    archlinux::Error::Request(e) => {
-                                                        error!("{e}");
-                                                    }
-                                                },
-                                                Err(res) => {
-                                                    error!("{}", res.to_string());
-                                                }
-                                            }
-                                            current += 1;
-                                            let value = (current as f32) / (len as f32) * 100.0;
-                                            progress_transmitter.send(value).unwrap();
-                                        }
-
-                                        let results = {
-                                            if !mirrors.is_empty() {
-                                                mirrors.sort_by(
-                                                    |(duration_a, _), (duration_b, _)| {
-                                                        duration_a.cmp(duration_b)
-                                                    },
-                                                );
-                                                mirrors
-                                                    .iter()
-                                                    .map(|(_, url)| url.to_owned())
-                                                    .collect_vec()
-                                            } else {
-                                                warn!("Exporting mirrors without rating...");
-                                                results
-                                            }
-                                        };
-                                        write_to_file(config, &results, popup_state, exporting);
-                                        let _ = progress_transmitter.send(0.0); // reset progress
-                                    });
-                                }
+                                let _ = self
+                                    .io_tx
+                                    .send(IoEvent::Export {
+                                        in_progress: Arc::clone(&exporting),
+                                        progress_transmitter,
+                                    })
+                                    .await;
                             }
                         }
                         AppReturn::Continue
@@ -393,9 +290,6 @@ impl App {
             Action::Export,
         ]
         .into();
-
-        self.show_popup
-            .store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn next(&mut self) {
@@ -552,51 +446,4 @@ fn insert_sort(app: &mut App, view: ViewSort) -> AppReturn {
     let mut config = app.configuration.lock().unwrap();
     config.view = view;
     AppReturn::Continue
-}
-
-fn write_to_file(
-    config: Arc<Mutex<Configuration>>,
-    mirrors: &[String],
-    popup_state: Arc<Mutex<PopUpState>>,
-    exporting: Arc<AtomicBool>,
-) {
-    let config = config.lock().unwrap();
-    let outfile = &config.outfile;
-
-    if let Some(dir) = outfile.parent() {
-        if std::fs::create_dir_all(dir).is_ok() {
-            let count = config.export as usize;
-            let output = &mirrors[if mirrors.len() >= count {
-                ..count
-            } else {
-                ..mirrors.len()
-            }];
-            match std::fs::OpenOptions::new()
-                .write(true)
-                .truncate(true)
-                .create(true)
-                .open(outfile)
-            {
-                Ok(mut file) => {
-                    for url in output.iter() {
-                        if let Err(e) = writeln!(file, "Server = {url}$repo/os/$arch") {
-                            error!("{e}");
-                        }
-                    }
-                    let mut state = popup_state.lock().unwrap();
-
-                    state.popup_text = format!(
-                        "Your mirrorlist has been successfully exported to: {}",
-                        outfile.display()
-                    );
-                }
-                Err(e) => {
-                    error!("{e}");
-                }
-            }
-        }
-    }
-    exporting.store(false, std::sync::atomic::Ordering::Relaxed);
-
-    info!("Your mirrorlist has been exported");
 }

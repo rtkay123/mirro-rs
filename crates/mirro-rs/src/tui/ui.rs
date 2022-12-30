@@ -1,5 +1,5 @@
 use std::{
-    sync::{atomic::AtomicBool, mpsc::Receiver, Arc, Mutex},
+    sync::{atomic::AtomicBool, mpsc::Receiver, Arc},
     time::Duration,
 };
 
@@ -18,14 +18,14 @@ use tui_logger::TuiLoggerWidget;
 
 use super::{
     actions::{Action, Actions},
-    view::{filter::Protocol, sort::ViewSort},
     state::{App, PopUpState},
+    view::{filter::Protocol, sort::ViewSort},
 };
 
 pub fn ui(
     f: &mut Frame<impl Backend>,
     app: &mut App,
-    popup: Arc<Mutex<PopUpState>>,
+    popup: &PopUpState,
     exporting: Arc<AtomicBool>,
     percentage: &Receiver<f32>,
 ) {
@@ -78,12 +78,9 @@ pub fn ui(
         draw_table(app, f, content_bar[1]);
     }
 
-    let p = {
-        let popup_state = popup.lock().unwrap();
-        Paragraph::new(popup_state.popup_text.clone())
-    };
+    let p = { Paragraph::new(popup.popup_text.clone()) };
 
-    if app.show_popup.load(std::sync::atomic::Ordering::Relaxed) {
+    if popup.visible {
         let rate_enabled = {
             let state = app.configuration.lock().unwrap();
             state.rate
