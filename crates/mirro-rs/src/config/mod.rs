@@ -14,7 +14,7 @@ use std::path::PathBuf;
 
 use crate::{
     cli::SelectionSort,
-    tui::dispatch::{
+    tui::view::{
         filter::Protocol,
         sort::{ExportSort, ViewSort},
     },

@@ -18,7 +18,7 @@ use tui_logger::TuiLoggerWidget;
 
 use super::{
     actions::{Action, Actions},
-    dispatch::{filter::Protocol, sort::ViewSort},
+    view::{filter::Protocol, sort::ViewSort},
     state::{App, PopUpState},
 };
 

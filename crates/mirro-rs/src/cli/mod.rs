@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, ValueEnum};
 use serde::Deserialize;
 
-use crate::tui::dispatch::{filter::Protocol, sort::ViewSort};
+use crate::tui::view::{filter::Protocol, sort::ViewSort};
 
 pub const DEFAULT_MIRROR_COUNT: u16 = 50;
 pub const DEFAULT_CACHE_TTL: u16 = 24;

@@ -19,10 +19,10 @@ use crate::tui::actions::Action;
 
 use super::{
     actions::Actions,
-    dispatch::{filter::Protocol, sort::ViewSort},
     inputs::key::Key,
     io::IoEvent,
     ui::filter_result,
+    view::{filter::Protocol, sort::ViewSort},
 };
 
 #[derive(Debug, PartialEq, Eq)]

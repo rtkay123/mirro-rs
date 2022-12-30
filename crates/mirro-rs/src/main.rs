@@ -6,7 +6,7 @@ use self::config::watch_config;
 #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
 use self::{
     cli::{ARCH_URL, DEFAULT_CACHE_TTL, DEFAULT_MIRROR_COUNT},
-    tui::dispatch::filter::Protocol,
+    tui::view::filter::Protocol,
 };
 
 mod cli;

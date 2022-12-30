@@ -1,9 +1,9 @@
 mod actions;
-pub mod dispatch;
 mod inputs;
 mod io;
 mod state;
 mod ui;
+pub mod view;
 
 use anyhow::Result;
 
