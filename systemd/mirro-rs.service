@@ -1,0 +1,11 @@
+[Unit]
+Description=Update Pacman mirrorlists with mirro-rs
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mirro-rs -d -o /etc/pacman.d/mirrorlist --rate
+
+[Install]
+RequiredBy=multi-user.target
