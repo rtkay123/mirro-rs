@@ -70,6 +70,7 @@ pub struct Args {
 
     /// Skip TUI session and directly export the mirrorlist
     #[arg(short, long)]
+    #[serde(default)]
     pub direct: bool,
 }
 
