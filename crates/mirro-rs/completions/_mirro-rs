@@ -1,0 +1,56 @@
+#compdef mirro-rs
+
+autoload -U is-at-least
+
+_mirro-rs() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" \
+'-o+[File to write mirrors to]:OUTFILE:_files' \
+'--outfile=[File to write mirrors to]:OUTFILE:_files' \
+'-e+[Number of mirrors to export \[default: 50\]]:EXPORT: ' \
+'--export=[Number of mirrors to export \[default: 50\]]:EXPORT: ' \
+'-v+[An order to view all countries]:VIEW:(alphabetical mirror-count)' \
+'--view=[An order to view all countries]:VIEW:(alphabetical mirror-count)' \
+'-s+[Default sort for exported mirrors]:SORT:(percentage delay duration score)' \
+'--sort=[Default sort for exported mirrors]:SORT:(percentage delay duration score)' \
+'-t+[Number of hours to cache mirrorlist for]:TTL: ' \
+'--ttl=[Number of hours to cache mirrorlist for]:TTL: ' \
+'-u+[URL to check for mirrors]:URL: ' \
+'--url=[URL to check for mirrors]:URL: ' \
+'--config=[Specify alternate configuration file]:CONFIG:_files' \
+'--timeout=[Connection timeout in seconds]:TIMEOUT: ' \
+'-a+[How old (in hours) should the mirrors be since last synchronisation]:AGE: ' \
+'--age=[How old (in hours) should the mirrors be since last synchronisation]:AGE: ' \
+'*-c+[Countries to search for mirrorlists]:COUNTRY: ' \
+'*-p+[Filters to use on mirrorlists]:PROTOCOLS:(https http rsync)' \
+'*--protocols=[Filters to use on mirrorlists]:PROTOCOLS:(https http rsync)' \
+'--completion-percent=[Set the minimum completion percent for the returned mirrors]:COMPLETION_PERCENT: ' \
+'-r[Sort mirrorlists by download speed when exporting]' \
+'--rate[Sort mirrorlists by download speed when exporting]' \
+'--ipv4[Only return mirrors that support IPv4]' \
+'--ipv6[Only return mirrors that support IPv6]' \
+'--isos[Only return mirrors that host ISOs]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
+&& ret=0
+}
+
+(( $+functions[_mirro-rs_commands] )) ||
+_mirro-rs_commands() {
+    local commands; commands=()
+    _describe -t commands 'mirro-rs commands' commands "$@"
+}
+
+_mirro-rs "$@"

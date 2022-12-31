@@ -34,5 +34,6 @@ toml = ["dep:toml", "dep:notify", "dep:cfg-if"]
 
 [build-dependencies]
 clap = { version = "4.0.32", features = ["derive"] }
+clap_complete = "4.0.7"
 clap_mangen = "0.2.6"
 serde = { version = "1.0.151", features = ["derive"] }

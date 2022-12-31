@@ -1,0 +1,78 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH mirro-rs 1  "mirro-rs 0.1.0-alpha.1" 
+.SH NAME
+mirro\-rs \- An ArchLinux mirrorlist manager with a TUI
+.SH SYNOPSIS
+\fBmirro\-rs\fR [\fB\-o\fR|\fB\-\-outfile\fR] [\fB\-e\fR|\fB\-\-export\fR] [\fB\-v\fR|\fB\-\-view\fR] [\fB\-s\fR|\fB\-\-sort\fR] [\fB\-t\fR|\fB\-\-ttl\fR] [\fB\-u\fR|\fB\-\-url\fR] [\fB\-\-config\fR] [\fB\-r\fR|\fB\-\-rate\fR] [\fB\-\-timeout\fR] [\fB\-a\fR|\fB\-\-age\fR] [\fB\-c \fR] [\fB\-p\fR|\fB\-\-protocols\fR] [\fB\-\-ipv4\fR] [\fB\-\-ipv6\fR] [\fB\-\-isos\fR] [\fB\-\-completion\-percent\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] 
+.SH DESCRIPTION
+An ArchLinux mirrorlist manager with a TUI
+.SH OPTIONS
+.TP
+\fB\-o\fR, \fB\-\-outfile\fR=\fIOUTFILE\fR
+File to write mirrors to
+.TP
+\fB\-e\fR, \fB\-\-export\fR=\fIEXPORT\fR
+Number of mirrors to export [default: 50]
+.TP
+\fB\-v\fR, \fB\-\-view\fR=\fIVIEW\fR
+An order to view all countries
+.br
+
+.br
+[\fIpossible values: \fRalphabetical, mirror\-count]
+.TP
+\fB\-s\fR, \fB\-\-sort\fR=\fISORT\fR
+Default sort for exported mirrors
+.br
+
+.br
+[\fIpossible values: \fRpercentage, delay, duration, score]
+.TP
+\fB\-t\fR, \fB\-\-ttl\fR=\fITTL\fR
+Number of hours to cache mirrorlist for
+.TP
+\fB\-u\fR, \fB\-\-url\fR=\fIURL\fR
+URL to check for mirrors
+.TP
+\fB\-\-config\fR=\fICONFIG\fR
+Specify alternate configuration file
+.TP
+\fB\-r\fR, \fB\-\-rate\fR=\fIRATE\fR
+Sort mirrorlists by download speed when exporting
+.TP
+\fB\-\-timeout\fR=\fITIMEOUT\fR
+Connection timeout in seconds
+.TP
+\fB\-a\fR, \fB\-\-age\fR=\fIAGE\fR
+How old (in hours) should the mirrors be since last synchronisation
+.TP
+\fB\-c\fR=\fICOUNTRY\fR
+Countries to search for mirrorlists
+.TP
+\fB\-p\fR, \fB\-\-protocols\fR=\fIPROTOCOLS\fR
+Filters to use on mirrorlists
+.br
+
+.br
+[\fIpossible values: \fRhttps, http, rsync]
+.TP
+\fB\-\-ipv4\fR=\fIIPV4\fR
+Only return mirrors that support IPv4
+.TP
+\fB\-\-ipv6\fR=\fIIPV6\fR
+Only return mirrors that support IPv6
+.TP
+\fB\-\-isos\fR=\fIISOS\fR
+Only return mirrors that host ISOs
+.TP
+\fB\-\-completion\-percent\fR=\fICOMPLETION_PERCENT\fR
+Set the minimum completion percent for the returned mirrors
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version information
+.SH VERSION
+v0.1.0\-alpha.1
