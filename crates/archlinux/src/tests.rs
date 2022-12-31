@@ -44,6 +44,7 @@ async fn archlinux_parse_body_local() -> Result<()> {
     Ok(())
 }
 
+#[ignore]
 #[tokio::test]
 #[cfg(feature = "time")]
 async fn check_last_sync() -> Result<()> {
