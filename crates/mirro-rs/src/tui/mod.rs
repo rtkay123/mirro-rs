@@ -1,6 +1,6 @@
 mod actions;
 mod inputs;
-mod io;
+pub mod io;
 mod state;
 mod ui;
 pub mod view;

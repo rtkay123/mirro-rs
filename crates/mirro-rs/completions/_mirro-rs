@@ -38,6 +38,8 @@ _mirro-rs() {
 '--completion-percent=[Set the minimum completion percent for the returned mirrors]:COMPLETION_PERCENT: ' \
 '-r[Sort mirrorlists by download speed when exporting]' \
 '--rate[Sort mirrorlists by download speed when exporting]' \
+'-d[Skip TUI session and directly export the mirrorlist]' \
+'--direct[Skip TUI session and directly export the mirrorlist]' \
 '--ipv4[Only return mirrors that support IPv4]' \
 '--ipv6[Only return mirrors that support IPv6]' \
 '--isos[Only return mirrors that host ISOs]' \

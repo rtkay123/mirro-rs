@@ -67,6 +67,10 @@ pub struct Args {
     /// Extra CDNs to check for mirrors
     #[arg(short, long)]
     pub include: Option<Vec<String>>,
+
+    /// Skip TUI session and directly export the mirrorlist
+    #[arg(short, long)]
+    pub direct: bool,
 }
 
 #[derive(clap::Args, Debug, Clone, Eq, PartialEq, Deserialize)]

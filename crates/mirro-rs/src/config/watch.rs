@@ -77,6 +77,7 @@ fn async_watch(
                         config_file.general.rate,
                         config_file.general.timeout,
                         config_file.general.include,
+                        config_file.general.direct,
                     );
 
                     let mut new_config = config.lock().unwrap();

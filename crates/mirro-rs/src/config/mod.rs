@@ -32,6 +32,7 @@ pub struct Configuration {
     pub rate: bool,
     pub connection_timeout: Option<u64>,
     pub include: Option<Vec<String>>,
+    pub direct: bool,
 }
 
 impl Configuration {
@@ -53,6 +54,7 @@ impl Configuration {
         rate: bool,
         connection_timeout: Option<u64>,
         include: Option<Vec<String>>,
+        direct: bool,
     ) -> Self {
         if ipv4 {
             filters.push(Protocol::Ipv4)
@@ -82,6 +84,7 @@ impl Configuration {
             rate,
             connection_timeout,
             include,
+            direct,
         }
     }
 }

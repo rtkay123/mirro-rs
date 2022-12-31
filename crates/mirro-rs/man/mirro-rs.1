@@ -4,7 +4,7 @@
 .SH NAME
 mirro\-rs \- An ArchLinux mirrorlist manager with a TUI
 .SH SYNOPSIS
-\fBmirro\-rs\fR [\fB\-o\fR|\fB\-\-outfile\fR] [\fB\-e\fR|\fB\-\-export\fR] [\fB\-v\fR|\fB\-\-view\fR] [\fB\-s\fR|\fB\-\-sort\fR] [\fB\-t\fR|\fB\-\-ttl\fR] [\fB\-u\fR|\fB\-\-url\fR] [\fB\-r\fR|\fB\-\-rate\fR] [\fB\-\-timeout\fR] [\fB\-i\fR|\fB\-\-include\fR] [\fB\-a\fR|\fB\-\-age\fR] [\fB\-c \fR] [\fB\-p\fR|\fB\-\-protocols\fR] [\fB\-\-ipv4\fR] [\fB\-\-ipv6\fR] [\fB\-\-isos\fR] [\fB\-\-completion\-percent\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] 
+\fBmirro\-rs\fR [\fB\-o\fR|\fB\-\-outfile\fR] [\fB\-e\fR|\fB\-\-export\fR] [\fB\-v\fR|\fB\-\-view\fR] [\fB\-s\fR|\fB\-\-sort\fR] [\fB\-t\fR|\fB\-\-ttl\fR] [\fB\-u\fR|\fB\-\-url\fR] [\fB\-r\fR|\fB\-\-rate\fR] [\fB\-\-timeout\fR] [\fB\-i\fR|\fB\-\-include\fR] [\fB\-d\fR|\fB\-\-direct\fR] [\fB\-a\fR|\fB\-\-age\fR] [\fB\-c \fR] [\fB\-p\fR|\fB\-\-protocols\fR] [\fB\-\-ipv4\fR] [\fB\-\-ipv6\fR] [\fB\-\-isos\fR] [\fB\-\-completion\-percent\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] 
 .SH DESCRIPTION
 An ArchLinux mirrorlist manager with a TUI
 .SH OPTIONS
@@ -43,6 +43,9 @@ Connection timeout in seconds
 .TP
 \fB\-i\fR, \fB\-\-include\fR=\fIINCLUDE\fR
 Extra CDNs to check for mirrors
+.TP
+\fB\-d\fR, \fB\-\-direct\fR=\fIDIRECT\fR
+Skip TUI session and directly export the mirrorlist
 .TP
 \fB\-a\fR, \fB\-\-age\fR=\fIAGE\fR
 How old (in hours) should the mirrors be since last synchronisation

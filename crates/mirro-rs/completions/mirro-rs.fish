@@ -11,6 +11,7 @@ complete -c mirro-rs -s c -d 'Countries to search for mirrorlists' -r
 complete -c mirro-rs -s p -l protocols -d 'Filters to use on mirrorlists' -r -f -a "{https	,http	,rsync	}"
 complete -c mirro-rs -l completion-percent -d 'Set the minimum completion percent for the returned mirrors' -r
 complete -c mirro-rs -s r -l rate -d 'Sort mirrorlists by download speed when exporting'
+complete -c mirro-rs -s d -l direct -d 'Skip TUI session and directly export the mirrorlist'
 complete -c mirro-rs -l ipv4 -d 'Only return mirrors that support IPv4'
 complete -c mirro-rs -l ipv6 -d 'Only return mirrors that support IPv6'
 complete -c mirro-rs -l isos -d 'Only return mirrors that host ISOs'

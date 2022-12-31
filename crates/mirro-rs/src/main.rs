@@ -8,6 +8,7 @@ use self::cli::{Protocol, ARCH_URL, DEFAULT_CACHE_TTL, DEFAULT_MIRROR_COUNT};
 
 mod cli;
 mod config;
+mod direct;
 mod tui;
 
 #[tokio::main]
@@ -113,10 +114,15 @@ async fn main() {
         } else {
             args.general.include
         };
+        let direct = if !args.general.direct && config.general.direct {
+            true
+        } else {
+            args.general.direct
+        };
 
         config::Configuration::new(
             outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6,
-            completion, age, rate, timoeut, include,
+            completion, age, rate, timoeut, include, direct,
         )
     };
 
@@ -158,15 +164,22 @@ async fn main() {
             rate,
             timeout,
             include,
+            args.general.direct,
         )
     };
 
-    let config = Arc::new(Mutex::new(config));
+    if config.direct {
+        if let Err(e) = direct::begin(config).await {
+            eprintln!("{e}")
+        }
+    } else {
+        let config = Arc::new(Mutex::new(config));
 
-    #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
-    watch_config(file, Arc::clone(&config));
+        #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+        watch_config(file, Arc::clone(&config));
 
-    let _ = tui::start(config).await;
+        let _ = tui::start(config).await;
+    }
     std::process::exit(0);
 }
 

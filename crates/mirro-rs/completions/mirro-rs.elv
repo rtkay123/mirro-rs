@@ -41,6 +41,8 @@ set edit:completion:arg-completer[mirro-rs] = {|@words|
             cand --completion-percent 'Set the minimum completion percent for the returned mirrors'
             cand -r 'Sort mirrorlists by download speed when exporting'
             cand --rate 'Sort mirrorlists by download speed when exporting'
+            cand -d 'Skip TUI session and directly export the mirrorlist'
+            cand --direct 'Skip TUI session and directly export the mirrorlist'
             cand --ipv4 'Only return mirrors that support IPv4'
             cand --ipv6 'Only return mirrors that support IPv6'
             cand --isos 'Only return mirrors that host ISOs'
