@@ -19,7 +19,7 @@ _mirro-rs() {
 
     case "${cmd}" in
         mirro__rs)
-            opts="-o -e -v -s -t -u -r -a -c -p -h -V --outfile --export --view --sort --ttl --url --config --rate --timeout --age --protocols --ipv4 --ipv6 --isos --completion-percent --help --version"
+            opts="-o -e -v -s -t -u -r -i -a -c -p -h -V --outfile --export --view --sort --ttl --url --rate --timeout --include --age --protocols --ipv4 --ipv6 --isos --completion-percent --help --version"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -73,11 +73,15 @@ _mirro-rs() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --config)
+                --timeout)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --timeout)
+                --include)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -i)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

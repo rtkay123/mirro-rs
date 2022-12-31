@@ -63,6 +63,10 @@ pub struct Args {
     /// Connection timeout in seconds
     #[arg(long = "timeout")]
     pub timeout: Option<u64>,
+
+    /// Extra CDNs to check for mirrors
+    #[arg(short, long)]
+    pub include: Option<Vec<String>>,
 }
 
 #[derive(clap::Args, Debug, Clone, Eq, PartialEq, Deserialize)]

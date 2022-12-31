@@ -17,6 +17,7 @@ use crate::{
     tui::view::sort::ExportSort,
 };
 
+#[derive(Debug)]
 pub struct Configuration {
     pub outfile: PathBuf,
     pub export: u16,
@@ -30,6 +31,7 @@ pub struct Configuration {
     pub age: u16,
     pub rate: bool,
     pub connection_timeout: Option<u64>,
+    pub include: Option<Vec<String>>,
 }
 
 impl Configuration {
@@ -50,6 +52,7 @@ impl Configuration {
         age: u16,
         rate: bool,
         connection_timeout: Option<u64>,
+        include: Option<Vec<String>>,
     ) -> Self {
         if ipv4 {
             filters.push(Protocol::Ipv4)
@@ -78,6 +81,7 @@ impl Configuration {
             age,
             rate,
             connection_timeout,
+            include,
         }
     }
 }

@@ -57,6 +57,10 @@ pub enum Error {
     #[error("could not build request {0}")]
     /// There was an error performing the request
     Request(String),
+    /// There was an error performing the request
+    #[cfg(feature = "time")]
+    #[error("could not parse time")]
+    TimeError(#[from] chrono::ParseError),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -234,4 +238,41 @@ pub fn rate_mirror(
         }
     }
     .boxed()
+}
+
+///
+#[cfg(feature = "time")]
+pub async fn get_last_sync(
+    mirror: impl Into<String>,
+    client: Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>>,
+) -> Result<(DateTime<Utc>, String)> {
+    let mirror = mirror.into();
+    let url = mirror.parse::<Uri>()?;
+
+    let req = Request::builder()
+        .uri(&url)
+        .body(Body::empty())
+        .map_err(|f| Error::Request(f.to_string()))?;
+
+    let response = client.request(req).await?;
+    let body = hyper::body::to_bytes(response.into_body()).await?;
+    let str_val = String::from_utf8_lossy(&body);
+    let x = find_last_sync(&str_val).map_err(Error::TimeError)?;
+    Ok((x, mirror))
+}
+
+#[cfg(feature = "time")]
+fn find_last_sync(body: &str) -> std::result::Result<DateTime<Utc>, ParseError> {
+    let item: Vec<_> = body
+        .lines()
+        .filter(|f| f.contains("lastsync"))
+        .take(1)
+        .collect();
+    let item: Vec<_> = item[0].split_whitespace().collect();
+    let date = &item[2];
+    let time = &item[3];
+
+    let dt = format!("{date} {time}");
+    NaiveDateTime::parse_from_str(&dt, "%d-%b-%Y %H:%M")
+        .map(|res| DateTime::<Utc>::from_utc(res, Utc))
 }

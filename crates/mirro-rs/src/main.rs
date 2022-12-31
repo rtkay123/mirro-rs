@@ -108,9 +108,15 @@ async fn main() {
             args.general.timeout
         };
 
+        let include = if args.general.include.is_none() && config.general.include.is_some() {
+            config.general.include
+        } else {
+            args.general.include
+        };
+
         config::Configuration::new(
             outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6,
-            completion, age, rate, timoeut,
+            completion, age, rate, timoeut, include,
         )
     };
 
@@ -133,6 +139,7 @@ async fn main() {
         let age = args.filters.age.unwrap_or(0);
         let rate = args.general.rate;
         let timeout = args.general.timeout;
+        let include = args.general.include;
 
         config::Configuration::new(
             outfile,
@@ -150,6 +157,7 @@ async fn main() {
             age,
             rate,
             timeout,
+            include,
         )
     };
 

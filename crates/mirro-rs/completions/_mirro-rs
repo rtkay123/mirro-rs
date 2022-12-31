@@ -27,8 +27,9 @@ _mirro-rs() {
 '--ttl=[Number of hours to cache mirrorlist for]:TTL: ' \
 '-u+[URL to check for mirrors]:URL: ' \
 '--url=[URL to check for mirrors]:URL: ' \
-'--config=[Specify alternate configuration file]:CONFIG:_files' \
 '--timeout=[Connection timeout in seconds]:TIMEOUT: ' \
+'*-i+[Extra CDNs to check for mirrors]:INCLUDE: ' \
+'*--include=[Extra CDNs to check for mirrors]:INCLUDE: ' \
 '-a+[How old (in hours) should the mirrors be since last synchronisation]:AGE: ' \
 '--age=[How old (in hours) should the mirrors be since last synchronisation]:AGE: ' \
 '*-c+[Countries to search for mirrorlists]:COUNTRY: ' \

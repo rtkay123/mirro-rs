@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 
-use archlinux::{ArchLinux, Country};
+use archlinux::{ArchLinux, Country, DateTime, Utc};
 
 use std::{
     path::PathBuf,
@@ -93,13 +93,23 @@ impl IoAsyncHandler {
         popup_state.visible = true;
         std::mem::drop(popup_state);
 
-        let (check_dl_speed, outfile, export_count, connection_timeout, selected_mirrors) = {
+        let (
+            check_dl_speed,
+            outfile,
+            export_count,
+            connection_timeout,
+            mut selected_mirrors,
+            extra_urls,
+            age,
+        ) = {
             let app_state = self.app.lock().await;
             let configuration = app_state.configuration.lock().unwrap();
             let check_dl_speed = configuration.rate;
             let outfile = configuration.outfile.clone();
             let export_count = configuration.export as usize;
             let connection_timeout = configuration.connection_timeout;
+            let include = configuration.include.clone();
+            let age = configuration.age;
 
             let selected_mirrors = app_state
                 .selected_mirrors
@@ -112,8 +122,23 @@ impl IoAsyncHandler {
                 export_count,
                 connection_timeout,
                 selected_mirrors,
+                include,
+                age,
             )
         };
+
+        let included_urls = tokio::spawn(async move {
+            if let Some(extra_urls) = extra_urls {
+                let results = check_extra_urls(extra_urls, age, connection_timeout).await;
+                Some(results)
+            } else {
+                None
+            }
+        });
+
+        if let Ok(Some(Ok(mut item))) = included_urls.await {
+            selected_mirrors.append(&mut item)
+        }
 
         if !check_dl_speed {
             Self::write_to_file(
@@ -167,6 +192,9 @@ impl IoAsyncHandler {
                             }
                             archlinux::Error::Request(e) => {
                                 error!("{e}");
+                            }
+                            archlinux::Error::TimeError(e) => {
+                                error!("{e}")
                             }
                         },
                         Err(e) => error!("{e}"),
@@ -255,6 +283,42 @@ impl IoAsyncHandler {
         let mut app = self.app.lock().await;
         app.ready();
     }
+}
+
+async fn check_extra_urls(
+    extra_urls: Vec<String>,
+    age: u16,
+    connection_timeout: Option<u64>,
+) -> Result<Vec<String>> {
+    info!("parsing included URLs");
+    let client = archlinux::get_client(connection_timeout);
+    let mut results = Vec::with_capacity(extra_urls.len());
+
+    let mut set = tokio::task::JoinSet::new();
+
+    for i in extra_urls.into_iter() {
+        set.spawn(archlinux::get_last_sync(i, client.clone()));
+    }
+
+    while let Some(res) = set.join_next().await {
+        match res {
+            Ok(Ok((dt, url))) => {
+                let utc: DateTime<Utc> = Utc::now();
+                let diff = utc - dt;
+                if i64::from(age) >= diff.num_hours() {
+                    results.push(url);
+                }
+            }
+            Ok(Err(e)) => {
+                error!("{e}")
+            }
+            Err(e) => {
+                error!("{e}")
+            }
+        }
+    }
+
+    Ok(results)
 }
 
 // Do we get a new mirrorlist or nah

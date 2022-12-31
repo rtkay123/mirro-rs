@@ -8,6 +8,9 @@ cache-ttl = 24
 url = "https://archlinux.org/mirrors/status/json/"
 rate-speed = true
 timeout = 5
+#include = [
+#  "https://cloudflaremirrors.com/archlinux/"
+#]
 
 [filters]
 countries = [ ]
