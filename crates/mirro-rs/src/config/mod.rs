@@ -13,11 +13,8 @@ pub use file::read_config_file;
 use std::path::PathBuf;
 
 use crate::{
-    cli::SelectionSort,
-    tui::view::{
-        filter::Protocol,
-        sort::{ExportSort, ViewSort},
-    },
+    cli::{Protocol, SelectionSort, ViewSort},
+    tui::view::sort::ExportSort,
 };
 
 pub struct Configuration {

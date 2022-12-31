@@ -1,23 +1,22 @@
 use std::fmt::Display;
 
-use clap::ValueEnum;
-use serde::Deserialize;
+use crate::cli::Protocol;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Protocol {
-    Https,
-    Http,
-    Rsync,
-    #[value(skip)]
-    InSync,
-    #[value(skip)]
-    Ipv4,
-    #[value(skip)]
-    Ipv6,
-    #[value(skip)]
-    Isos,
-}
+//#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
+//#[serde(rename_all = "lowercase")]
+//pub enum Protocol {
+//    Https,
+//    Http,
+//    Rsync,
+//    #[value(skip)]
+//    InSync,
+//    #[value(skip)]
+//    Ipv4,
+//    #[value(skip)]
+//    Ipv6,
+//    #[value(skip)]
+//    Isos,
+//}
 
 impl From<archlinux::Protocol> for Protocol {
     fn from(value: archlinux::Protocol) -> Self {

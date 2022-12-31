@@ -1,15 +1,6 @@
 use std::fmt::Display;
 
-use clap::ValueEnum;
-use serde::Deserialize;
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum ViewSort {
-    #[default]
-    Alphabetical,
-    MirrorCount,
-}
+use crate::cli::ViewSort;
 
 impl Display for ViewSort {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

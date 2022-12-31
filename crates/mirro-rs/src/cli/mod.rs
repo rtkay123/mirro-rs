@@ -3,8 +3,6 @@ use std::path::PathBuf;
 use clap::{Parser, ValueEnum};
 use serde::Deserialize;
 
-use crate::tui::view::{filter::Protocol, sort::ViewSort};
-
 pub const DEFAULT_MIRROR_COUNT: u16 = 50;
 pub const DEFAULT_CACHE_TTL: u16 = 24;
 pub const ARCH_URL: &str = "https://archlinux.org/mirrors/status/json/";
@@ -67,7 +65,7 @@ pub struct Args {
     pub timeout: Option<u64>,
 }
 
-#[derive(clap::Args, Default, Debug, Clone, Eq, PartialEq, Deserialize)]
+#[derive(clap::Args, Debug, Clone, Eq, PartialEq, Deserialize)]
 pub struct Filters {
     /// How old (in hours) should the mirrors be since last synchronisation
     #[arg(long, short)]
@@ -143,4 +141,28 @@ fn view() -> Option<ViewSort> {
 
 fn filters() -> Option<Vec<Protocol>> {
     Some(vec![Protocol::Http, Protocol::Https])
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Protocol {
+    Https,
+    Http,
+    Rsync,
+    #[value(skip)]
+    InSync,
+    #[value(skip)]
+    Ipv4,
+    #[value(skip)]
+    Ipv6,
+    #[value(skip)]
+    Isos,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ViewSort {
+    #[default]
+    Alphabetical,
+    MirrorCount,
 }

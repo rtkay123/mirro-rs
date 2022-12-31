@@ -1,7 +1,10 @@
 use archlinux::{ArchLinux, Country, DateTime, Utc};
 use std::sync::{atomic::AtomicBool, mpsc::Sender, Arc, Mutex};
 
-use crate::config::Configuration;
+use crate::{
+    cli::{Protocol, ViewSort},
+    config::Configuration,
+};
 
 use itertools::Itertools;
 use log::{debug, error, info, warn};
@@ -13,13 +16,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::tui::actions::Action;
 
-use super::{
-    actions::Actions,
-    inputs::key::Key,
-    io::IoEvent,
-    ui::filter_result,
-    view::{filter::Protocol, sort::ViewSort},
-};
+use super::{actions::Actions, inputs::key::Key, io::IoEvent, ui::filter_result};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AppReturn {

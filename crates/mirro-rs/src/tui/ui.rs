@@ -16,10 +16,11 @@ use tui::{
 };
 use tui_logger::TuiLoggerWidget;
 
+use crate::cli::{Protocol, ViewSort};
+
 use super::{
     actions::{Action, Actions},
     state::{App, PopUpState},
-    view::{filter::Protocol, sort::ViewSort},
 };
 
 pub fn ui(

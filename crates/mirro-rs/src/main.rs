@@ -4,10 +4,7 @@ use std::sync::{Arc, Mutex};
 use self::config::watch_config;
 
 #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
-use self::{
-    cli::{ARCH_URL, DEFAULT_CACHE_TTL, DEFAULT_MIRROR_COUNT},
-    tui::view::filter::Protocol,
-};
+use self::cli::{Protocol, ARCH_URL, DEFAULT_CACHE_TTL, DEFAULT_MIRROR_COUNT};
 
 mod cli;
 mod config;

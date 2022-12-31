@@ -1,6 +1,6 @@
 [package]
 name = "mirro-rs"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "An ArchLinux mirrorlist manager with a TUI"
@@ -31,3 +31,8 @@ default = []
 json = ["dep:serde_json", "dep:notify", "dep:cfg-if"]
 yaml = ["dep:serde_yaml", "dep:notify", "dep:cfg-if"]
 toml = ["dep:toml", "dep:notify", "dep:cfg-if"]
+
+[build-dependencies]
+clap = { version = "4.0.32", features = ["derive"] }
+clap_mangen = "0.2.6"
+serde = { version = "1.0.151", features = ["derive"] }
