@@ -35,7 +35,18 @@ A mirrorlist manager for Arch Linux systems
 
 ## Getting Started
 
-### Compiling
+### Installation
+
+`mirro-rs` is available in the AUR. If you're using `paru`:
+
+```sh
+paru -S mirro-rs-git
+```
+
+> **Note**
+> By default, this enables [configuration](#configuration) through `toml` files. You should edit the `PKGBUILD` if you prefer another configuration format (or to disable configuration files altogether).
+
+### Manual Compilation
 
 - cargo
 
