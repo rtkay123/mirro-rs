@@ -1,9 +1,8 @@
 use super::Result;
-use chrono::{DateTime, NaiveDateTime, Utc};
 use hyper::{body::Buf, Body, Client, Request, StatusCode, Uri};
 use hyper_tls::HttpsConnector;
 
-use crate::{response::external::Root, Error};
+use crate::{find_last_sync, response::external::Root, Error};
 
 const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
 const LOCAL_SOURCE: &str = include_str!("../sample/archlinux.json");
@@ -45,19 +44,17 @@ async fn archlinux_parse_body_local() -> Result<()> {
     Ok(())
 }
 
-fn extras<'a>() -> Vec<&'a str> {
-    vec![
+#[tokio::test]
+#[cfg(feature = "time")]
+async fn check_last_sync() -> Result<()> {
+    let client = Client::builder().build::<_, Body>(HttpsConnector::new());
+    let urls = vec![
         "https://mirror.ufs.ac.za/archlinux/",
         "https://cloudflaremirrors.com/archlinux/",
         "https://mirror.lesviallon.fr/archlinux/",
-    ]
-}
+    ];
 
-#[tokio::test]
-async fn check_last_sync() -> Result<()> {
-    let client = Client::builder().build::<_, Body>(HttpsConnector::new());
-
-    for i in extras().iter() {
+    for i in urls.iter() {
         let url = i.parse::<Uri>()?;
 
         let req = Request::builder()
@@ -68,20 +65,9 @@ async fn check_last_sync() -> Result<()> {
         let response = client.request(req).await?;
         let body = hyper::body::to_bytes(response.into_body()).await?;
         let str_val = String::from_utf8_lossy(&body);
-        let item: Vec<_> = str_val
-            .lines()
-            .filter(|f| f.contains("lastsync"))
-            .take(1)
-            .collect();
-        let item: Vec<_> = item[0].split_whitespace().collect();
-        let date = &item[2];
-        let time = &item[3];
+        let last_sync = find_last_sync(&str_val);
 
-        let dt = format!("{date} {time}");
-        let t = NaiveDateTime::parse_from_str(&dt, "%d-%b-%Y %H:%M")
-            .map(|res| DateTime::<Utc>::from_utc(res, Utc));
-
-        assert!(t.is_ok());
+        assert!(last_sync.is_ok());
     }
     Ok(())
 }
