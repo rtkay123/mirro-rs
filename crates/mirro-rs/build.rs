@@ -5,6 +5,7 @@ use clap_complete::{generate_to, Shell};
 mod cli;
 
 fn main() -> std::io::Result<()> {
+    println!("cargo:rerun-if-changed=src/cli/mod.rs");
     let outdir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
 
     let man_dir = outdir.join("man");
