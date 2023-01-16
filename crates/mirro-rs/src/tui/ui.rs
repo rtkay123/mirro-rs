@@ -30,79 +30,135 @@ pub fn ui(
     exporting: Arc<AtomicBool>,
     percentage: &Receiver<f32>,
 ) {
+    const MIN_WIDTH: u16 = 80;
+    const MIN_HEIGHT: u16 = 27;
     let area = f.size();
-    check_size(&area);
-
-    let chunks = Layout::default()
-        .constraints([Constraint::Min(20), Constraint::Length(3)].as_ref())
-        .split(area);
-
-    let body_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(20), Constraint::Length(60)].as_ref())
-        .split(chunks[0]);
-
-    {
-        // Body & Help
-        let sidebar = Layout::default()
+    if check_size(&area, MIN_WIDTH, MIN_HEIGHT) {
+        let region = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)].as_ref())
-            .split(body_chunks[1]);
+            .constraints(
+                [
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(25),
+                ]
+                .as_ref(),
+            )
+            .split(centered_rect(50, 50, area));
 
-        let help = draw_help(&app.actions);
-        f.render_widget(help, sidebar[1]);
+        let current_size_label = Spans::from(vec![Span::styled(
+            "Terminal size is too small",
+            Style::default().add_modifier(Modifier::BOLD),
+        )]);
+        let current_size = Spans::from(vec![
+            Span::styled("width = ", Style::default()),
+            Span::styled(
+                area.width.to_string(),
+                if area.width < MIN_WIDTH {
+                    Style::default().fg(Color::Red)
+                } else {
+                    Style::default().fg(Color::Green)
+                },
+            ),
+            Span::styled(" height = ", Style::default()),
+            Span::styled(
+                area.height.to_string(),
+                if area.height < MIN_HEIGHT {
+                    Style::default().fg(Color::Red)
+                } else {
+                    Style::default().fg(Color::Green)
+                },
+            ),
+        ]);
+        let expected_size_label = Spans::from(vec![Span::styled(
+            "Expected size",
+            Style::default().add_modifier(Modifier::BOLD),
+        )]);
+        let expected_size = Spans::from(vec![Span::styled(
+            format!("width = {MIN_WIDTH} height = {MIN_HEIGHT}"),
+            Style::default(),
+        )]);
+        let text = Paragraph::new(current_size_label).alignment(Alignment::Center);
+        let current_size = Paragraph::new(current_size).alignment(Alignment::Center);
+        let expected_size_label = Paragraph::new(expected_size_label).alignment(Alignment::Center);
+        let expected_size = Paragraph::new(expected_size).alignment(Alignment::Center);
+        f.render_widget(text, region[0]);
+        f.render_widget(current_size, region[1]);
+        f.render_widget(expected_size_label, region[2]);
+        f.render_widget(expected_size, region[3]);
+    } else {
+        let chunks = Layout::default()
+            .constraints([Constraint::Min(20), Constraint::Length(3)].as_ref())
+            .split(area);
 
-        f.render_widget(draw_selection(app), sidebar[0]);
+        let body_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(20), Constraint::Length(60)].as_ref())
+            .split(chunks[0]);
 
-        match app.show_input {
-            true => {
-                f.render_widget(draw_filter(app), chunks[1]);
-                f.set_cursor(
-                    // Put cursor past the end of the input text
-                    chunks[1].x + app.input_cursor_position as u16 + 1,
-                    // Move one line down, from the border to the input line
-                    chunks[1].y + 1,
-                )
+        {
+            // Body & Help
+            let sidebar = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Percentage(40), Constraint::Percentage(60)].as_ref())
+                .split(body_chunks[1]);
+
+            let help = draw_help(&app.actions);
+            f.render_widget(help, sidebar[1]);
+
+            f.render_widget(draw_selection(app), sidebar[0]);
+
+            match app.show_input {
+                true => {
+                    f.render_widget(draw_filter(app), chunks[1]);
+                    f.set_cursor(
+                        // Put cursor past the end of the input text
+                        chunks[1].x + app.input_cursor_position as u16 + 1,
+                        // Move one line down, from the border to the input line
+                        chunks[1].y + 1,
+                    )
+                }
+                false => f.render_widget(draw_logs(), chunks[1]),
+            };
+        }
+
+        {
+            let content_bar = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(3), Constraint::Min(20)].as_ref())
+                .split(body_chunks[0]);
+
+            f.render_widget(draw_sort(app), content_bar[0]);
+
+            draw_table(app, f, content_bar[1]);
+        }
+
+        let p = { Paragraph::new(popup.popup_text.clone()) };
+
+        if popup.visible {
+            let rate_enabled = {
+                let state = app.configuration.lock().unwrap();
+                state.rate
+            };
+            let block = Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().bg(Color::Black));
+            let p = p.block(block).alignment(Alignment::Center);
+            let area = centered_rect(60, 20, area);
+            f.render_widget(Clear, area);
+            if exporting.load(std::sync::atomic::Ordering::Relaxed) && rate_enabled {
+                while let Ok(pos) = percentage.try_recv() {
+                    log::info!("exporting mirrors: progress {pos:.2}%");
+                    let gauge = Gauge::default()
+                        .gauge_style(Style::default().fg(Color::Blue).bg(Color::Black))
+                        .block(create_block("Exporting mirrors"))
+                        .percent(pos as u16);
+                    f.render_widget(gauge, area);
+                }
+            } else {
+                f.render_widget(p, area);
             }
-            false => f.render_widget(draw_logs(), chunks[1]),
-        };
-    }
-
-    {
-        let content_bar = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Length(3), Constraint::Min(20)].as_ref())
-            .split(body_chunks[0]);
-
-        f.render_widget(draw_sort(app), content_bar[0]);
-
-        draw_table(app, f, content_bar[1]);
-    }
-
-    let p = { Paragraph::new(popup.popup_text.clone()) };
-
-    if popup.visible {
-        let rate_enabled = {
-            let state = app.configuration.lock().unwrap();
-            state.rate
-        };
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Black));
-        let p = p.block(block).alignment(Alignment::Center);
-        let area = centered_rect(60, 20, area);
-        f.render_widget(Clear, area);
-        if exporting.load(std::sync::atomic::Ordering::Relaxed) && rate_enabled {
-            while let Ok(pos) = percentage.try_recv() {
-                log::info!("exporting mirrors: progress {pos:.2}%");
-                let gauge = Gauge::default()
-                    .gauge_style(Style::default().fg(Color::Blue).bg(Color::Black))
-                    .block(create_block("Exporting mirrors"))
-                    .percent(pos as u16);
-                f.render_widget(gauge, area);
-            }
-        } else {
-            f.render_widget(p, area);
         }
     }
 }
@@ -201,13 +257,8 @@ fn draw_help(actions: &Actions) -> Table {
         .column_spacing(1)
 }
 
-fn check_size(area: &Rect) {
-    if area.width < 52 {
-        panic!("Require width >= 52, (got {})", area.width);
-    }
-    if area.height < 28 {
-        panic!("Require height >= 28, (got {})", area.height);
-    }
+fn check_size(area: &Rect, width: u16, height: u16) -> bool {
+    area.width < width || area.height < height
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
