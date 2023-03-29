@@ -1,6 +1,7 @@
 <div align="center">
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/kawaki-san/mirro-rs/ci.yml?label=build">
   <img alt="GitHub" src="https://img.shields.io/github/license/kawaki-san/mirro-rs">
+  <img alt="Crates.io" src="https://img.shields.io/crates/v/mirro-rs">
 </div>
 <h3 align="center">$${\color{LightBlue}mirro-rs}$$</h3>
 <p align="center">
