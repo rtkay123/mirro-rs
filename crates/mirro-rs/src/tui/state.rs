@@ -1,4 +1,7 @@
-use archlinux::{ArchLinux, Country, DateTime, Utc};
+use archlinux::{
+    chrono::{DateTime, Utc},
+    ArchLinux, Country,
+};
 use std::sync::{atomic::AtomicBool, mpsc::Sender, Arc, Mutex};
 
 use crate::{

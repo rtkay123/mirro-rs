@@ -1,6 +1,9 @@
 use anyhow::{bail, Result};
 
-use archlinux::{ArchLinux, Country, DateTime, Utc};
+use archlinux::{
+    chrono::{DateTime, Utc},
+    ArchLinux, Country,
+};
 
 use std::{
     path::PathBuf,
