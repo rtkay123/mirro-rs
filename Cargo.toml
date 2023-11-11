@@ -3,6 +3,7 @@ members = [ "crates/*" ]
 resolver = "2"
 
 [profile.release]
+panic = "abort"
 lto = true
 strip = true
 codegen-units = 1
