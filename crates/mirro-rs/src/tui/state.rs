@@ -11,7 +11,7 @@ use crate::{
 
 use itertools::Itertools;
 use log::{error, info, warn};
-use tui::{
+use ratatui::{
     style::{Color, Modifier, Style},
     widgets::{Cell, Row},
 };
