@@ -1,0 +1,29 @@
+# https://github.com/SpectralOps/rust-ci-release-template
+name: Release
+
+on:
+  push:
+  pull_request:
+
+env:
+  BIN_NAME: mirro-rs
+  PROJECT_NAME: mirro-rs
+  REPO_NAME: rtkay123/mirro-rs
+
+jobs:
+  changelog:
+    name: Publish
+    needs: [dist]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Previous tag
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+
+      - name: Run Changelog CI
+        uses: saadmk11/changelog-ci@v1.1.2
+        with:
+          changelog_filename: CHANGELOG.md
+          config_file: .github/changelog-ci-config.yaml
+          release_version: ${{ steps.previoustag.outputs.tag }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
