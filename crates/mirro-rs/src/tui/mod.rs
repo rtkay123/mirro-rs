@@ -19,7 +19,7 @@ use std::{
 };
 use tokio::sync::Mutex;
 
-use tui::{backend::CrosstermBackend, Terminal};
+use ratatui::{backend::CrosstermBackend, Terminal};
 
 use crate::config::Configuration;
 

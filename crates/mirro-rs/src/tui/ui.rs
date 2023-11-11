@@ -9,11 +9,10 @@ use archlinux::{
 };
 
 use itertools::Itertools;
-use tui::{
-    backend::Backend,
+use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table},
     Frame,
 };
@@ -27,7 +26,7 @@ use super::{
 };
 
 pub fn ui(
-    f: &mut Frame<impl Backend>,
+    f: &mut Frame,
     app: &mut App,
     popup: &PopUpState,
     exporting: Arc<AtomicBool>,
@@ -50,11 +49,11 @@ pub fn ui(
             )
             .split(centered_rect(50, 50, area));
 
-        let current_size_label = Spans::from(vec![Span::styled(
+        let current_size_label = Line::from(vec![Span::styled(
             "Terminal size is too small",
             Style::default().add_modifier(Modifier::BOLD),
         )]);
-        let current_size = Spans::from(vec![
+        let current_size = Line::from(vec![
             Span::styled("width = ", Style::default()),
             Span::styled(
                 area.width.to_string(),
@@ -74,11 +73,11 @@ pub fn ui(
                 },
             ),
         ]);
-        let expected_size_label = Spans::from(vec![Span::styled(
+        let expected_size_label = Line::from(vec![Span::styled(
             "Expected size",
             Style::default().add_modifier(Modifier::BOLD),
         )]);
-        let expected_size = Spans::from(vec![Span::styled(
+        let expected_size = Line::from(vec![Span::styled(
             format!("width = {MIN_WIDTH} height = {MIN_HEIGHT}"),
             Style::default(),
         )]);
@@ -166,7 +165,7 @@ pub fn ui(
     }
 }
 
-fn draw_table(app: &mut App, f: &mut Frame<impl Backend>, region: Rect) {
+fn draw_table(app: &mut App, f: &mut Frame, region: Rect) {
     let header_cells = ["  index", "╭─── country", "mirrors"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default()));
@@ -305,7 +304,7 @@ fn draw_logs<'a>() -> TuiLoggerWidget<'a> {
 }
 
 fn draw_filter(app: &App) -> Paragraph {
-    Paragraph::new(app.input.as_ref()).block(create_block("Filter"))
+    Paragraph::new(app.input.as_str()).block(create_block("Filter"))
 }
 
 fn draw_selection<'a>(app: &App) -> Table<'a> {
@@ -422,7 +421,7 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
 fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
     let config = app.configuration.lock().unwrap();
     let count: isize = config.filters.len() as isize;
-    let active_sort = vec![config.view];
+    let active_sort = [config.view];
     let mut sorts: Vec<_> = active_sort
         .iter()
         .enumerate()
@@ -461,7 +460,7 @@ fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
 
     sorts.append(&mut filters);
 
-    let widget = Spans::from(sorts);
+    let widget = Line::from(sorts);
 
     let bt = format!("Sort & Filter ({count})");
 
