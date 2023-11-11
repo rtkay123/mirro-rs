@@ -1,22 +1,18 @@
-use super::Result;
-use hyper::{body::Buf, Body, Client, Request, StatusCode, Uri};
-use hyper_tls::HttpsConnector;
+use reqwest::{Response, StatusCode};
 
-use crate::{find_last_sync, response::external::Root, Error};
+use super::Result;
+
+use crate::{find_last_sync, get_client, response::external::Root};
 
 const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
 const LOCAL_SOURCE: &str = include_str!("../sample/archlinux.json");
 
-async fn response() -> Result<hyper::Response<Body>> {
-    let client = Client::builder().build::<_, Body>(HttpsConnector::new());
-    let uri = ARCHLINUX_MIRRORS.parse::<Uri>()?;
+async fn response() -> Result<Response> {
+    let client = get_client(None)?;
 
-    let req = Request::builder()
-        .uri(uri)
-        .body(Body::empty())
-        .map_err(|f| Error::Request(f.to_string()))?;
+    let response = client.get(ARCHLINUX_MIRRORS).send().await;
 
-    Ok(client.request(req).await.unwrap())
+    Ok(response?)
 }
 
 #[tokio::test]
@@ -29,9 +25,8 @@ async fn arch_mirrors_ok() -> Result<()> {
 #[tokio::test]
 async fn archlinux_parse_body_remote() -> Result<()> {
     assert!(response().await.is_ok());
-    let bytes = hyper::body::aggregate(response().await?.into_body()).await?;
 
-    let root = serde_json::from_reader::<_, Root>(bytes.reader());
+    let root = response().await?.json::<Root>().await;
 
     assert!(root.is_ok());
 
@@ -48,7 +43,7 @@ async fn archlinux_parse_body_local() -> Result<()> {
 #[tokio::test]
 #[cfg(feature = "time")]
 async fn check_last_sync() -> Result<()> {
-    let client = Client::builder().build::<_, Body>(HttpsConnector::new());
+    let client = get_client(None)?;
     let urls = [
         "https://mirror.ufs.ac.za/archlinux/",
         "https://cloudflaremirrors.com/archlinux/",
@@ -56,16 +51,8 @@ async fn check_last_sync() -> Result<()> {
     ];
 
     for i in urls.iter() {
-        let url = i.parse::<Uri>()?;
-
-        let req = Request::builder()
-            .uri(&url)
-            .body(Body::empty())
-            .map_err(|f| Error::Request(f.to_string()))?;
-
-        let response = client.request(req).await?;
-        let body = hyper::body::to_bytes(response.into_body()).await?;
-        let str_val = String::from_utf8_lossy(&body);
+        let response = client.get(*i).send().await?.bytes().await?;
+        let str_val = String::from_utf8_lossy(&response);
         let last_sync = find_last_sync(&str_val);
 
         assert!(last_sync.is_ok());

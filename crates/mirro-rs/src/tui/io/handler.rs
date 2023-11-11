@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 
 use archlinux::{
     chrono::{DateTime, Utc},
-    ArchLinux, Country,
+    ArchLinux, Client, Country,
 };
 
 use std::{
@@ -27,11 +27,12 @@ const CACHE_FILE: &str = "cache";
 pub struct IoAsyncHandler {
     app: Arc<Mutex<App>>,
     popup: Arc<Mutex<PopUpState>>,
+    client: Client,
 }
 
 impl IoAsyncHandler {
-    pub fn new(app: Arc<Mutex<App>>, popup: Arc<Mutex<PopUpState>>) -> Self {
-        Self { app, popup }
+    pub fn new(app: Arc<Mutex<App>>, popup: Arc<Mutex<PopUpState>>, client: Client) -> Self {
+        Self { app, popup, client }
     }
 
     pub async fn initialise(&mut self, config: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
@@ -96,21 +97,12 @@ impl IoAsyncHandler {
         popup_state.visible = true;
         std::mem::drop(popup_state);
 
-        let (
-            check_dl_speed,
-            outfile,
-            export_count,
-            connection_timeout,
-            mut selected_mirrors,
-            extra_urls,
-            age,
-        ) = {
+        let (check_dl_speed, outfile, export_count, mut selected_mirrors, extra_urls, age) = {
             let app_state = self.app.lock().await;
             let configuration = app_state.configuration.lock().unwrap();
             let check_dl_speed = configuration.rate;
             let outfile = configuration.outfile.clone();
             let export_count = configuration.export as usize;
-            let connection_timeout = configuration.connection_timeout;
             let include = configuration.include.clone();
             let age = configuration.age;
 
@@ -123,16 +115,16 @@ impl IoAsyncHandler {
                 check_dl_speed,
                 outfile,
                 export_count,
-                connection_timeout,
                 selected_mirrors,
                 include,
                 age,
             )
         };
 
+        let client = self.client.clone();
         let included_urls = tokio::spawn(async move {
             if let Some(extra_urls) = extra_urls {
-                let results = check_extra_urls(extra_urls, age, connection_timeout).await;
+                let results = check_extra_urls(extra_urls, age, client).await;
                 Some(results)
             } else {
                 None
@@ -154,13 +146,13 @@ impl IoAsyncHandler {
             .await;
         } else {
             Self::rate_mirrors(
-                connection_timeout,
                 selected_mirrors,
                 Some(Arc::clone(&self.popup)),
                 Some(progress_transmitter),
                 outfile,
                 export_count,
                 Some(in_progress),
+                self.client.clone(),
             )
             .await;
         }
@@ -169,17 +161,15 @@ impl IoAsyncHandler {
     }
 
     pub async fn rate_mirrors(
-        connection_timeout: Option<u64>,
         selected_mirrors: Vec<String>,
         popup: Option<Arc<Mutex<PopUpState>>>,
         progress_transmitter: Option<std::sync::mpsc::Sender<f32>>,
         outfile: PathBuf,
         export_count: usize,
         in_progress: Option<Arc<AtomicBool>>,
+        client: Client,
     ) -> tokio::task::JoinHandle<()> {
         let mut mirrors = Vec::with_capacity(selected_mirrors.len());
-
-        let client = archlinux::get_client(connection_timeout);
 
         let mut set = tokio::task::JoinSet::new();
 
@@ -203,9 +193,6 @@ impl IoAsyncHandler {
                             error!("{e}");
                         }
                         archlinux::Error::Parse(e) => {
-                            error!("{e}");
-                        }
-                        archlinux::Error::InvalidURL(e) => {
                             error!("{e}");
                         }
                         archlinux::Error::Rate {
@@ -317,10 +304,9 @@ impl IoAsyncHandler {
 async fn check_extra_urls(
     extra_urls: Vec<String>,
     age: u16,
-    connection_timeout: Option<u64>,
+    client: Client,
 ) -> Result<Vec<String>> {
     info!("parsing included URLs");
-    let client = archlinux::get_client(connection_timeout);
     let mut results = Vec::with_capacity(extra_urls.len());
 
     let mut set = tokio::task::JoinSet::new();
