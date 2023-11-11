@@ -167,7 +167,7 @@ pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Du
 
         let now = Instant::now();
 
-        let response = client.get(&uri).send().await.unwrap();
+        let response = client.get(&uri).send().await?;
 
         if response.status() == StatusCode::OK {
             Ok((now.elapsed(), url))
@@ -207,8 +207,7 @@ pub async fn get_last_sync(
         .await
         .map_err(|e| Error::Request(e.to_string()))?
         .bytes()
-        .await
-        .unwrap();
+        .await?;
 
     let str_val = String::from_utf8_lossy(&body);
     let x = find_last_sync(&str_val).map_err(Error::TimeError)?;
