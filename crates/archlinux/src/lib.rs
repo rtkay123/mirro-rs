@@ -8,19 +8,18 @@
 use std::time::{Duration, Instant};
 
 use futures::{future::BoxFuture, FutureExt};
-use hyper::{
-    client::HttpConnector,
-    header::LOCATION,
-    StatusCode,
-    {body::Buf, Body, Client, Request, Uri},
-};
-use hyper_tls::HttpsConnector;
 use log::{info, trace};
+use reqwest::{header::LOCATION, ClientBuilder, Response, StatusCode};
 
 use crate::response::external::Root;
 
 #[cfg(test)]
 mod tests;
+
+mod errors;
+pub use errors::Error;
+
+pub use reqwest::Client;
 
 mod response;
 #[cfg(feature = "time")]
@@ -28,40 +27,6 @@ mod response;
 pub use chrono;
 
 pub use response::{external::Protocol, internal::*};
-
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-/// Error type definitions returned by the crate
-pub enum Error {
-    /// The connection could not be made (perhaps a network error is
-    /// the cause)
-    #[error("could not establish connection")]
-    Connection(#[from] hyper::Error),
-    /// The response could not be parsed to an internal type
-    #[error("could not parse response")]
-    Parse(#[from] serde_json::Error),
-    /// The constructed URL is invalid
-    #[error("the url you provided `{0}` is invalid")]
-    InvalidURL(#[from] hyper::http::uri::InvalidUri),
-    /// The mirror could not be rated
-    #[error("could not find file (expected {qualified_url:?}, from {url:?}), server returned {status_code:?}")]
-    Rate {
-        /// The URL including the filepath that was sent in the request
-        qualified_url: Uri,
-        /// The URL of the particular mirror
-        url: String,
-        /// The status code returned by the server
-        status_code: StatusCode,
-    },
-    #[error("could not build request {0}")]
-    /// There was an error performing the request
-    Request(String),
-    /// There was an error performing the request
-    #[cfg(feature = "time")]
-    #[error("could not parse time")]
-    TimeError(#[from] chrono::ParseError),
-}
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -87,9 +52,7 @@ pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db.tar.gz";
 pub async fn get_mirrors(source: &str, with_timeout: Option<u64>) -> Result<ArchLinux> {
     let response = get_response(source, with_timeout).await?;
 
-    let bytes = hyper::body::aggregate(response.into_body()).await?;
-
-    let root: Root = serde_json::from_reader(bytes.reader())?;
+    let root: Root = response.json().await?;
 
     let body = ArchLinux::from(root);
     let count = body.countries.len();
@@ -97,17 +60,14 @@ pub async fn get_mirrors(source: &str, with_timeout: Option<u64>) -> Result<Arch
     Ok(body)
 }
 
-async fn get_response(source: &str, with_timeout: Option<u64>) -> Result<hyper::Response<Body>> {
+async fn get_response(source: &str, with_timeout: Option<u64>) -> Result<Response> {
     trace!("creating http client");
-    let client = get_client(with_timeout);
-    let uri = source.parse::<Uri>()?;
+    let client = get_client(with_timeout)?;
 
-    trace!("building request");
-    let req = Request::builder()
-        .uri(uri)
-        .body(Body::empty())
-        .map_err(|f| Error::Request(f.to_string()))?;
-    Ok(client.request(req).await?)
+    trace!("sending request");
+    let response = client.get(source).send().await?;
+
+    Ok(response)
 }
 
 /// The same as [get_mirrors](get_mirrors) but returns a tuple including the json as a
@@ -130,9 +90,8 @@ pub async fn get_mirrors_with_raw(
 ) -> Result<(ArchLinux, String)> {
     let response = get_response(source, with_timeout).await?;
 
-    let bytes = hyper::body::aggregate(response.into_body()).await?;
+    let root: Root = response.json().await?;
 
-    let root: Root = serde_json::from_reader(bytes.reader())?;
     let value = serde_json::to_string(&root)?;
 
     Ok((ArchLinux::from(root), value))
@@ -174,16 +133,15 @@ pub fn parse_local(contents: &str) -> Result<ArchLinux> {
 /// #  Ok(())
 /// # }
 /// ```
-pub fn get_client(
-    with_timeout: Option<u64>,
-) -> Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>> {
+pub fn get_client(with_timeout: Option<u64>) -> Result<Client> {
     let timeout = with_timeout.map(Duration::from_secs);
-    let h = HttpsConnector::new();
-    let mut connector = hyper_timeout::TimeoutConnector::new(h);
-    connector.set_connect_timeout(timeout);
-    connector.set_read_timeout(timeout);
-    connector.set_write_timeout(timeout);
-    Client::builder().build::<_, hyper::Body>(connector)
+
+    let mut client_builder = ClientBuilder::new();
+    if let Some(timeout) = timeout {
+        client_builder = client_builder.timeout(timeout).connect_timeout(timeout);
+    }
+
+    Ok(client_builder.build()?)
 }
 
 /// Queries a mirrorlist and calculates how long it took to get a response
@@ -203,19 +161,14 @@ pub fn get_client(
 /// #  Ok(())
 /// # }
 /// ```
-pub fn rate_mirror(
-    url: String,
-    client: Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>>,
-) -> BoxFuture<'static, Result<(Duration, String)>> {
+pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Duration, String)>> {
     async move {
-        let uri = format!("{url}{FILE_PATH}").parse::<Uri>()?;
+        let uri = format!("{url}{FILE_PATH}");
 
-        let req = Request::builder()
-            .uri(&uri)
-            .body(Body::empty())
-            .map_err(|f| Error::Request(f.to_string()))?;
         let now = Instant::now();
-        let response = client.request(req).await?;
+
+        let response = client.get(&uri).send().await.unwrap();
+
         if response.status() == StatusCode::OK {
             Ok((now.elapsed(), url))
         } else if response.status() == StatusCode::MOVED_PERMANENTLY {
@@ -244,18 +197,19 @@ pub fn rate_mirror(
 #[cfg(feature = "time")]
 pub async fn get_last_sync(
     mirror: impl Into<String>,
-    client: Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>>,
+    client: Client,
 ) -> Result<(chrono::DateTime<chrono::Utc>, String)> {
     let mirror = mirror.into();
-    let url = mirror.parse::<Uri>()?;
 
-    let req = Request::builder()
-        .uri(&url)
-        .body(Body::empty())
-        .map_err(|f| Error::Request(f.to_string()))?;
+    let body = client
+        .get(&mirror)
+        .send()
+        .await
+        .map_err(|e| Error::Request(e.to_string()))?
+        .bytes()
+        .await
+        .unwrap();
 
-    let response = client.request(req).await?;
-    let body = hyper::body::to_bytes(response.into_body()).await?;
     let str_val = String::from_utf8_lossy(&body);
     let x = find_last_sync(&str_val).map_err(Error::TimeError)?;
     Ok((x, mirror))

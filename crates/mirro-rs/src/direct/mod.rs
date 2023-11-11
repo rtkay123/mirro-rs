@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use anyhow::{bail, Result};
 use archlinux::{
     chrono::{DateTime, Local},
-    ArchLinux, Mirror,
+    get_client, ArchLinux, Mirror,
 };
 use itertools::Itertools;
 
@@ -75,15 +75,17 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
         results.append(&mut included);
     }
 
+    let client = get_client(connection_timeout)?;
+
     if rate {
         if let Err(e) = IoAsyncHandler::rate_mirrors(
-            connection_timeout,
             results,
             None,
             None,
             outfile,
             export_count.into(),
             None,
+            client,
         )
         .await
         .await

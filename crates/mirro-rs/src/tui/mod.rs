@@ -7,6 +7,7 @@ pub mod view;
 
 use anyhow::Result;
 
+use archlinux::get_client;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
@@ -34,6 +35,12 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
 
+    let client = {
+        let timeout = configuration.lock().unwrap();
+        let timeout = timeout.connection_timeout;
+        get_client(timeout)?
+    };
+
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
 
     let backend = CrosstermBackend::new(stdout);
@@ -49,7 +56,7 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
     {
         let popup_state = Arc::clone(&popup_state);
         tokio::spawn(async move {
-            let mut handler = IoAsyncHandler::new(inner, popup_state);
+            let mut handler = IoAsyncHandler::new(inner, popup_state, client);
             debug!("Getting Arch Linux mirrors. Please wait");
             while let Some(io_event) = sync_io_rx.recv().await {
                 handler

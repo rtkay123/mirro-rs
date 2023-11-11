@@ -2,7 +2,7 @@ FROM alpine:3.17.0
 
 ENV RUSTFLAGS="-C target-feature=-crt-static"
 
-RUN apk add --no-cache openssl-dev gcc musl-dev rustup
+RUN apk add --no-cache gcc musl-dev rustup
 
 RUN rustup-init -t x86_64-unknown-linux-musl --default-toolchain nightly --profile minimal -y
 
