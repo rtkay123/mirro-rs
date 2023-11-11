@@ -3,7 +3,8 @@ name: Release
 
 on:
   push:
-  pull_request:
+    branches:
+      - master
 
 env:
   BIN_NAME: mirro-rs
