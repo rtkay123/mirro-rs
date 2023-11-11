@@ -156,7 +156,7 @@ pub fn get_client(with_timeout: Option<u64>) -> Result<Client> {
 /// # use mirrors_arch::{get_client, rate_mirror};
 /// # async fn foo()->Result<(), Box<dyn std::error::Error>>{
 /// # let url = String::default();
-/// # let client = get_client(Some(5));
+/// # let client = get_client(Some(5))?;
 /// let (duration, url) = rate_mirror(url, client).await?;
 /// #  Ok(())
 /// # }

@@ -97,14 +97,7 @@ impl IoAsyncHandler {
         popup_state.visible = true;
         std::mem::drop(popup_state);
 
-        let (
-            check_dl_speed,
-            outfile,
-            export_count,
-            mut selected_mirrors,
-            extra_urls,
-            age,
-        ) = {
+        let (check_dl_speed, outfile, export_count, mut selected_mirrors, extra_urls, age) = {
             let app_state = self.app.lock().await;
             let configuration = app_state.configuration.lock().unwrap();
             let check_dl_speed = configuration.rate;
