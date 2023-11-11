@@ -1,7 +1,6 @@
 changelog_type: 'commit_message' # or 'pull_request'
 header_prefix: 'Version:'
 commit_changelog: true
-comment_changelog: true
 include_unlabeled_changes: true
 unlabeled_group_title: 'Unlabeled Changes'
 pull_request_title_regex: '^Release'
