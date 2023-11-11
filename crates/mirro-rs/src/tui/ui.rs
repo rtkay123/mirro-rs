@@ -12,7 +12,7 @@ use itertools::Itertools;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Line},
+    text::{Line, Span},
     widgets::{Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table},
     Frame,
 };
