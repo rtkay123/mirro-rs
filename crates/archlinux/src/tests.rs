@@ -49,7 +49,7 @@ async fn archlinux_parse_body_local() -> Result<()> {
 #[cfg(feature = "time")]
 async fn check_last_sync() -> Result<()> {
     let client = Client::builder().build::<_, Body>(HttpsConnector::new());
-    let urls = vec![
+    let urls = [
         "https://mirror.ufs.ac.za/archlinux/",
         "https://cloudflaremirrors.com/archlinux/",
         "https://mirror.lesviallon.fr/archlinux/",
