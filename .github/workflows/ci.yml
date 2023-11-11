@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        msrv: ["1.70.0"] # ratatui
+        msrv: ["1.71.0"] # systemd-journal-logger
     name: ubuntu / ${{ matrix.msrv }}
     steps:
       - uses: actions/checkout@v4
