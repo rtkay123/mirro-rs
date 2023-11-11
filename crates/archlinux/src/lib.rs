@@ -25,7 +25,7 @@ mod tests;
 mod response;
 #[cfg(feature = "time")]
 #[doc(no_inline)]
-pub use chrono::*;
+pub use chrono;
 
 pub use response::{external::Protocol, internal::*};
 
@@ -245,7 +245,7 @@ pub fn rate_mirror(
 pub async fn get_last_sync(
     mirror: impl Into<String>,
     client: Client<hyper_timeout::TimeoutConnector<HttpsConnector<HttpConnector>>>,
-) -> Result<(DateTime<Utc>, String)> {
+) -> Result<(chrono::DateTime<chrono::Utc>, String)> {
     let mirror = mirror.into();
     let url = mirror.parse::<Uri>()?;
 
@@ -262,7 +262,9 @@ pub async fn get_last_sync(
 }
 
 #[cfg(feature = "time")]
-fn find_last_sync(body: &str) -> std::result::Result<DateTime<Utc>, ParseError> {
+fn find_last_sync(
+    body: &str,
+) -> std::result::Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
     let item: Vec<_> = body
         .lines()
         .filter(|f| f.contains("lastsync"))
@@ -273,6 +275,6 @@ fn find_last_sync(body: &str) -> std::result::Result<DateTime<Utc>, ParseError> 
     let time = &item[3];
 
     let dt = format!("{date} {time}");
-    NaiveDateTime::parse_from_str(&dt, "%d-%b-%Y %H:%M")
-        .map(|res| DateTime::<Utc>::from_utc(res, Utc))
+    chrono::NaiveDateTime::parse_from_str(&dt, "%d-%b-%Y %H:%M")
+        .map(|res| chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(res, chrono::Utc))
 }

@@ -1,4 +1,7 @@
-use archlinux::{ArchLinux, Country, DateTime, Utc};
+use archlinux::{
+    chrono::{DateTime, Utc},
+    ArchLinux, Country,
+};
 use std::sync::{atomic::AtomicBool, mpsc::Sender, Arc, Mutex};
 
 use crate::{
@@ -7,7 +10,7 @@ use crate::{
 };
 
 use itertools::Itertools;
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use tui::{
     style::{Color, Modifier, Style},
     widgets::{Cell, Row},
@@ -142,6 +145,7 @@ impl App {
                     Action::FilterHttps => insert_filter(self, Protocol::Https),
                     Action::FilterHttp => insert_filter(self, Protocol::Http),
                     Action::FilterRsync => insert_filter(self, Protocol::Rsync),
+                    Action::FilterFtp => insert_filter(self, Protocol::Ftp),
                     Action::FilterSyncing => insert_filter(self, Protocol::InSync),
                     Action::ViewSortAlphabetically => insert_sort(self, ViewSort::Alphabetical),
                     Action::ViewSortMirrorCount => insert_sort(self, ViewSort::MirrorCount),
@@ -272,6 +276,7 @@ impl App {
             Action::NavigateUp,
             Action::FilterHttp,
             Action::FilterHttps,
+            Action::FilterFtp,
             Action::FilterRsync,
             Action::FilterSyncing,
             Action::FilterIpv4,
@@ -427,11 +432,11 @@ fn insert_character(app: &mut App, key: char) {
 fn insert_filter(app: &mut App, filter: Protocol) -> AppReturn {
     let mut config = app.configuration.lock().unwrap();
     if let Some(idx) = config.filters.iter().position(|f| *f == filter) {
-        debug!("protocol filter: removed {filter}");
+        info!("protocol filter: removed {filter}");
         config.filters.remove(idx);
         app.show_insync = false;
     } else {
-        debug!("protocol filter: added {filter}");
+        info!("protocol filter: added {filter}");
         config.filters.push(filter);
         app.show_insync = false;
     }

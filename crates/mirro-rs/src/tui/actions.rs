@@ -11,6 +11,7 @@ pub enum Action {
     NavigateDown,
     FilterHttps,
     FilterHttp,
+    FilterFtp,
     FilterRsync,
     FilterSyncing,
     FilterIpv4,
@@ -28,7 +29,7 @@ pub enum Action {
 
 impl Action {
     pub fn iterator() -> Iter<'static, Action> {
-        static ACTIONS: [Action; 20] = [
+        static ACTIONS: [Action; 21] = [
             Action::Quit,
             Action::ClosePopUp,
             Action::ShowInput,
@@ -37,6 +38,7 @@ impl Action {
             Action::FilterHttp,
             Action::FilterHttps,
             Action::FilterRsync,
+            Action::FilterFtp,
             Action::FilterIpv4,
             Action::FilterIpv6,
             Action::FilterIsos,
@@ -57,12 +59,13 @@ impl Action {
         match self {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
             Action::ClosePopUp => &[Key::Ctrl('p')],
-            Action::ShowInput => &[Key::Ctrl('f'), Key::Char('/')],
+            Action::ShowInput => &[Key::Ctrl('i'), Key::Char('/')],
             Action::NavigateUp => &[Key::Char('k'), Key::Up],
             Action::NavigateDown => &[Key::Char('j'), Key::Down],
             Action::FilterHttps => &[Key::Ctrl('s')],
             Action::FilterHttp => &[Key::Ctrl('h')],
             Action::FilterRsync => &[Key::Ctrl('r')],
+            Action::FilterFtp => &[Key::Ctrl('f')],
             Action::FilterSyncing => &[Key::Ctrl('o')],
             Action::ViewSortAlphabetically => &[Key::Char('1')],
             Action::ViewSortMirrorCount => &[Key::Char('2')],
@@ -90,6 +93,7 @@ impl Display for Action {
             Action::FilterHttps => "toggle https",
             Action::FilterHttp => "toggle http",
             Action::FilterRsync => "toggle rsync",
+            Action::FilterFtp => "toggle ftp",
             Action::FilterSyncing => "toggle in-sync",
             Action::ViewSortAlphabetically => "sort [country] A-Z",
             Action::ViewSortMirrorCount => "sort [country] mirrors",
@@ -158,7 +162,8 @@ impl From<Vec<Action>> for Actions {
             })
             .collect::<Vec<_>>();
         if !errors.is_empty() {
-            panic!("{}", errors.join("; "))
+            let err = errors.join("; ");
+            panic!("{err}")
         }
 
         // Ok, we can create contextual actions

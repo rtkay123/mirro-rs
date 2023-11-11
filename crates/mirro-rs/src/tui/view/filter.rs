@@ -24,6 +24,7 @@ impl From<archlinux::Protocol> for Protocol {
             archlinux::Protocol::Rsync => Self::Rsync,
             archlinux::Protocol::Http => Self::Http,
             archlinux::Protocol::Https => Self::Https,
+            archlinux::Protocol::Ftp => Self::Ftp,
         }
     }
 }
@@ -37,6 +38,7 @@ impl Display for Protocol {
                 Protocol::Https => "https",
                 Protocol::Http => "http",
                 Protocol::Rsync => "rsync",
+                Protocol::Ftp => "ftp",
                 Protocol::InSync => "in-sync",
                 Protocol::Ipv4 => "ipv4",
                 Protocol::Ipv6 => "ipv6",

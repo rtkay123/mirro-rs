@@ -49,6 +49,8 @@ pub enum Protocol {
     Http,
     /// https
     Https,
+    /// ftp
+    Ftp,
 }
 
 impl Display for Protocol {
@@ -60,6 +62,7 @@ impl Display for Protocol {
                 Protocol::Rsync => "rsync",
                 Protocol::Http => "http",
                 Protocol::Https => "https",
+                Protocol::Ftp => "ftp",
             }
         )
     }

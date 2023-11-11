@@ -3,7 +3,10 @@ use std::{
     time::Duration,
 };
 
-use archlinux::{DateTime, Local, Mirror};
+use archlinux::{
+    chrono::{DateTime, Local},
+    Mirror,
+};
 
 use itertools::Itertools;
 use tui::{

@@ -158,6 +158,7 @@ pub enum Protocol {
     Https,
     Http,
     Rsync,
+    Ftp,
     #[value(skip)]
     InSync,
     #[value(skip)]

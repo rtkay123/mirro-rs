@@ -1,7 +1,10 @@
 use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Result};
-use archlinux::{ArchLinux, DateTime, Local, Mirror};
+use archlinux::{
+    chrono::{DateTime, Local},
+    ArchLinux, Mirror,
+};
 use itertools::Itertools;
 
 use crate::{
