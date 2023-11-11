@@ -17,18 +17,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Get Release Version
-        id: release_version
-        run: |
-          export RELEASE_VERSION=$(git describe --abbrev=0 --tags)
-          echo "Version: $RELEASE_VERSION"
-          echo "::set-output name=release_version::$RELEASE_VERSION"
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0
+        with:
+          versionSpec: "5.x"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v0
 
       - name: Run Changelog CI
         uses: saadmk11/changelog-ci@v1.1.2
         with:
           changelog_filename: CHANGELOG.md
           config_file: .github/changelog-ci-config.yaml
-          release_version: ${{ steps.release_version.outputs.release_version }}
+          release_version: ${{ steps.gitversion.outputs.majorMinorPatch }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get Changelog Output
+        run: |
+          echo "${{ steps.changelog-ci.outputs.changelog }}"
+          echo "${{ steps.changelog-ci.outputs.changelog }}" >> $GITHUB_STEP_SUMMARY
