@@ -163,3 +163,10 @@ jobs:
       - run: cargo publish -p ${BIN_NAME} --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
+      - name: Run Changelog CI
+        uses: saadmk11/changelog-ci@v1.1.2
+        with:
+          changelog_filename: CHANGELOG.md
+          config_file: .github/changelog-ci-config.yaml
+          github_token: ${{ secrets.GITHUB_TOKEN }}
