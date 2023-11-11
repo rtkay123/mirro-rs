@@ -1,6 +1,6 @@
 <div align="center">
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/kawaki-san/mirro-rs/ci.yml?label=build">
-  <img alt="GitHub" src="https://img.shields.io/github/license/kawaki-san/mirro-rs">
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/rtkay123/mirro-rs/ci.yml?label=build">
+  <img alt="GitHub" src="https://img.shields.io/github/license/rtkay123/mirro-rs">
   <img alt="Crates.io" src="https://img.shields.io/crates/v/mirro-rs">
 </div>
 <h3 align="center">$${\color{LightBlue}mirro-rs}$$</h3>
@@ -10,9 +10,9 @@ A mirrorlist manager for Arch Linux systems
 <a href="#usage"><strong>View usage examples »</strong></a>
 <br />
 <br />
-<a href="https://github.com/kawaki-san/mirro-rs/issues">Report Bug</a>
+<a href="https://github.com/rtkay123/mirro-rs/issues">Report Bug</a>
 ·
-<a href="https://github.com/kawaki-san/mirro-rs/issues">Request Feature</a>
+<a href="https://github.com/rtkay123/mirro-rs/issues">Request Feature</a>
 </p>
 
 ![app](https://user-images.githubusercontent.com/70331483/209865273-81fcb593-c61d-46b9-9f2a-448da383782f.svg)
@@ -68,7 +68,7 @@ paru -S mirro-rs-git
   Clone the repository:
 
   ```sh
-  git clone https://github.com/kawaki-san/mirro-rs
+  git clone https://github.com/rtkay123/mirro-rs
   ```
 
   You may then build the release target:
