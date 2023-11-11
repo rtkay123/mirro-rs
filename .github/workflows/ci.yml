@@ -56,14 +56,22 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-
+          components: llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
-
       - name: Compile Tests
         run: cargo test --no-run --all-features
-
       - name: Test
         run: cargo test --all-features
+      - name: cargo install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: cargo llvm-cov
+        run: cargo llvm-cov --workspace --locked --all-features --lcov --output-path lcov.info
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   hack:
     runs-on: ubuntu-latest
