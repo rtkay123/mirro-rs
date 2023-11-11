@@ -3,8 +3,10 @@ name = "mirrors-arch"
 version = "0.1.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-authors = ["rtkay123"]
+authors = ["rtkay123 <dev@kanjala.com>"]
 description = "An ArchLinux mirrorlist retriever used by mirro-rs"
+repository = "https://github.com/rtkay123/mirro-rs"
+homepage = "https://github.com/rtkay123/mirro-rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
