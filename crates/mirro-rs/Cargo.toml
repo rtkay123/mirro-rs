@@ -28,9 +28,9 @@ serde_json = { version = "1.0.91", optional = true }
 serde_yaml = { version = "0.9.16", optional = true }
 tokio = { version = "1.23.0", features = ["rt-multi-thread", "macros", "fs"] }
 toml = { version = "0.5.10", optional = true }
-tui-logger = "0.10.0"
+tui-logger = { version = "0.10.0", features = ["crossterm"], default-features = false }
 unicode-width = "0.1.10"
-ratatui = "0.24.0"
+ratatui = { version = "0.24.0", features = ["crossterm"], default-features = false }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 systemd-journal-logger = "2.1.0"
