@@ -2,7 +2,7 @@ use reqwest::{Response, StatusCode};
 
 use super::Result;
 
-use crate::{find_last_sync, get_client, get_mirrors, response::external::Root};
+use crate::{find_last_sync, get_client, response::external::Root};
 
 const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
 const LOCAL_SOURCE: &str = include_str!("../../sample/archlinux.json");
@@ -59,7 +59,7 @@ async fn check_mirrors_raw() -> Result<()> {
 #[tokio::test]
 async fn check_local_parse() -> Result<()> {
     let json = include_str!("../../sample/archlinux.json");
-    
+
     let mirrors = crate::parse_local(json);
     assert!(mirrors.is_ok());
     Ok(())
