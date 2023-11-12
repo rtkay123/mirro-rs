@@ -1,9 +1,10 @@
 <div align="center">
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/rtkay123/mirro-rs/ci.yml?label=build">
-  <img alt="GitHub" src="https://img.shields.io/github/license/rtkay123/mirro-rs">
+  <img alt="Crates.io" src="https://img.shields.io/crates/l/mirro-rs">
   <img alt="Crates.io" src="https://img.shields.io/crates/v/mirro-rs">
+  <img alt="msrv" src="https://img.shields.io/badge/msrv-1.71.0-blue"/>
 </div>
-<h3 align="center">$${\color{LightBlue}mirro-rs}$$</h3>
+<h3 align="center">mirro-rs</h3>
 <p align="center">
 A mirrorlist manager for Arch Linux systems
 <br />
@@ -15,7 +16,7 @@ A mirrorlist manager for Arch Linux systems
 <a href="https://github.com/rtkay123/mirro-rs/issues">Request Feature</a>
 </p>
 
-![app](https://user-images.githubusercontent.com/70331483/209865273-81fcb593-c61d-46b9-9f2a-448da383782f.svg)
+![app](https://github.com/rtkay123/mirro-rs/assets/70331483/03acce81-6dd5-4fc8-b9a1-1709762d53b6)
 
 <p align="center">mirro-rs provides a TUI to help you better visualise managing your mirrorlist.</p>
 
@@ -31,7 +32,7 @@ A mirrorlist manager for Arch Linux systems
   - Age
   - Country
   - ipv4, ipv6, isos
-  - Protocol - `http`, `https` or `rsync`
+  - Protocol - `http`, `https`, `ftp` or `rsync`
   - Completion Percentage
 
 ## Getting Started
