@@ -81,7 +81,7 @@ async fn check_last_sync() -> Result<()> {
         let handle = tokio::spawn({
             let client = client.clone();
             let mirror = String::from(*i);
-            async move { crate::get_last_sync(mirror, client.clone()) }
+            async move { crate::get_last_sync(mirror, client.clone()).await }
         });
 
         futures.push(handle);
