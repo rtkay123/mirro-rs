@@ -2,7 +2,7 @@ use reqwest::{Response, StatusCode};
 
 use super::Result;
 
-use crate::{find_last_sync, get_client, response::external::Root};
+use crate::{get_client, response::external::Root};
 
 const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
 const LOCAL_SOURCE: &str = include_str!("../../sample/archlinux.json");
@@ -76,17 +76,10 @@ async fn check_last_sync() -> Result<()> {
     ];
 
     for i in urls.iter() {
-        let response = client.get(*i).send().await?.bytes().await?;
-        let str_val = String::from_utf8_lossy(&response);
-        let last_sync = find_last_sync(&str_val);
+        let last_sync = crate::get_last_sync(String::from(*i), client.clone()).await;
 
-        dbg!(&last_sync);
         assert!(last_sync.is_ok());
     }
-
-    let last_sync = crate::get_last_sync(urls[0], client).await;
-    dbg!(&last_sync);
-    assert!(last_sync.is_ok());
     Ok(())
 }
 
