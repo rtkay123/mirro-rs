@@ -1,9 +1,11 @@
-use crate::{config::Configuration, direct::begin};
+use crate::{cli::ArgConfig, config::Configuration, direct::begin};
 
 #[tokio::test]
 async fn sample_bin() {
-    let configuration = Configuration::default();
-    let result = begin(configuration).await;
+    let config_str = include_str!("../../../../examples/mirro-rs.toml");
+    let configuration: ArgConfig = toml::from_str(config_str).unwrap();
+    let config = Configuration::from(configuration);
+    let result = begin(config).await;
     dbg!(&result);
     assert!(result.is_ok());
 }

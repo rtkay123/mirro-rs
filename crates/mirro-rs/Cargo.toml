@@ -41,6 +41,9 @@ json = ["dep:serde_json", "dep:notify", "dep:cfg-if"]
 yaml = ["dep:serde_yaml", "dep:notify", "dep:cfg-if"]
 toml = ["dep:toml", "dep:notify", "dep:cfg-if"]
 
+[dev-dependencies]
+toml = "0.8.8"
+
 [build-dependencies]
 clap = { version = "4.0.32", features = ["derive"] }
 clap_complete = "4.0.7"
