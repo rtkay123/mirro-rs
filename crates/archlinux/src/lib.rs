@@ -228,6 +228,7 @@ fn find_last_sync(
     let time = &item[3];
 
     let dt = format!("{date} {time}");
+    dbg!(&dt);
     let result = chrono::NaiveDateTime::parse_from_str(&dt, "%d-%b-%Y %H:%M");
 
     result.map(|res| chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(res, chrono::Utc))

@@ -88,7 +88,6 @@ async fn check_last_sync() -> Result<()> {
     }
 
     let result = futures::future::try_join_all(futures).await;
-    dbg!(&result);
 
     assert!(result.is_ok());
 
