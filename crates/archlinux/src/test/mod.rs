@@ -75,11 +75,23 @@ async fn check_last_sync() -> Result<()> {
         "https://mirror.lesviallon.fr/archlinux/",
     ];
 
-    for i in urls.iter() {
-        let last_sync = crate::get_last_sync(String::from(*i), client.clone()).await;
+    let mut futures = Vec::with_capacity(urls.len());
 
-        assert!(last_sync.is_ok());
+    for i in urls.iter() {
+        let handle = tokio::spawn({
+            let client = client.clone();
+            let mirror = String::from(*i);
+            async move { crate::get_last_sync(mirror, client.clone()) }
+        });
+
+        futures.push(handle);
     }
+
+    let result = futures::future::try_join_all(futures).await;
+    dbg!(&result);
+
+    assert!(result.is_ok());
+
     Ok(())
 }
 
