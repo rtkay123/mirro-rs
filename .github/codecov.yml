@@ -1,0 +1,19 @@
+# ref: https://docs.codecov.com/docs/codecovyml-reference
+coverage:
+  range: 85..100
+  round: down
+  precision: 1
+  status:
+    project:
+      default:
+        threshold: 1%
+
+comment:
+  layout: "files"
+  require_changes: yes
+
+ignore:
+  - "**/src/test"
+  - "**/src/errors"
+  - "crates/mirro-rs/src/tui"
+  - "crates/mirro-rs/src/cli"

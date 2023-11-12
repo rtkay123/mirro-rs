@@ -2,7 +2,7 @@ use reqwest::{Response, StatusCode};
 
 use super::Result;
 
-use crate::{find_last_sync, get_client, response::external::Root};
+use crate::{get_client, response::external::Root};
 
 const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
 const LOCAL_SOURCE: &str = include_str!("../../sample/archlinux.json");
@@ -65,7 +65,6 @@ async fn check_local_parse() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 #[cfg(feature = "time")]
 async fn check_last_sync() -> Result<()> {
@@ -76,12 +75,32 @@ async fn check_last_sync() -> Result<()> {
         "https://mirror.lesviallon.fr/archlinux/",
     ];
 
-    for i in urls.iter() {
-        let response = client.get(*i).send().await?.bytes().await?;
-        let str_val = String::from_utf8_lossy(&response);
-        let last_sync = find_last_sync(&str_val);
+    let mut futures = Vec::with_capacity(urls.len());
 
-        assert!(last_sync.is_ok());
+    for i in urls.iter() {
+        let handle = tokio::spawn({
+            let client = client.clone();
+            let mirror = String::from(*i);
+            async move { crate::get_last_sync(mirror, client.clone()).await }
+        });
+
+        futures.push(handle);
     }
+
+    let result = futures::future::try_join_all(futures).await;
+
+    assert!(result.is_ok());
+
+    Ok(())
+}
+
+#[tokio::test]
+#[cfg(feature = "time")]
+async fn rate_mirror() -> Result<()> {
+    let client = get_client(None)?;
+    let url = "https://mirror.ufs.ac.za/archlinux/";
+
+    let res = crate::rate_mirror(url.into(), client).await;
+    assert!(res.is_ok());
     Ok(())
 }

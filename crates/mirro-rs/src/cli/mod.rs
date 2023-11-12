@@ -7,6 +7,7 @@ pub const DEFAULT_MIRROR_COUNT: u16 = 50;
 pub const DEFAULT_CACHE_TTL: u16 = 24;
 pub const ARCH_URL: &str = "https://archlinux.org/mirrors/status/json/";
 
+#[cfg_attr(test, derive(Default))]
 #[derive(Parser, Debug, Deserialize)]
 #[command(author, version, about, long_about = None)]
 pub struct ArgConfig {
@@ -16,6 +17,7 @@ pub struct ArgConfig {
     pub filters: Filters,
 }
 
+#[cfg_attr(test, derive(Default))]
 #[derive(clap::Args, Debug, Deserialize)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
@@ -74,6 +76,7 @@ pub struct Args {
     pub direct: bool,
 }
 
+#[cfg_attr(test, derive(Default))]
 #[derive(clap::Args, Debug, Clone, Eq, PartialEq, Deserialize)]
 pub struct Filters {
     /// How old (in hours) should the mirrors be since last synchronisation
@@ -152,9 +155,11 @@ fn filters() -> Option<Vec<Protocol>> {
     Some(vec![Protocol::Http, Protocol::Https])
 }
 
+#[cfg_attr(test, derive(Default))]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, ValueEnum, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Protocol {
+    #[cfg_attr(test, default)]
     Https,
     Http,
     Rsync,

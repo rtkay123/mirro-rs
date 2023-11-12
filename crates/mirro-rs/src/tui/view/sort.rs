@@ -13,10 +13,12 @@ impl Display for ViewSort {
 }
 
 #[allow(dead_code)]
+#[cfg_attr(test, derive(Default))]
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum ExportSort {
     Completion,
     MirroringDelay,
+    #[cfg_attr(test, default)]
     Duration,
     Score,
 }
