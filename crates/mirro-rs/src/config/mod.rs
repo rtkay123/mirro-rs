@@ -13,10 +13,11 @@ pub use file::read_config_file;
 use std::path::PathBuf;
 
 use crate::{
-    cli::{Protocol, SelectionSort, ViewSort},
+    cli::{self, ArgConfig, Protocol, SelectionSort, ViewSort},
     tui::view::sort::ExportSort,
 };
 
+#[cfg_attr(test, derive(Default))]
 #[derive(Debug)]
 pub struct Configuration {
     pub outfile: PathBuf,
@@ -86,5 +87,156 @@ impl Configuration {
             include,
             direct,
         }
+    }
+}
+
+#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+fn get_bools(args: &cli::Filters, config: &cli::Filters) -> (bool, bool, bool) {
+    let ipv4 = if !args.ipv4 && config.ipv4 {
+        true
+    } else {
+        args.ipv4
+    };
+
+    let ipv6 = if !args.ipv6 && config.ipv6 {
+        true
+    } else {
+        args.ipv6
+    };
+
+    let isos = if !args.isos && config.isos {
+        true
+    } else {
+        args.isos
+    };
+
+    (ipv4, ipv6, isos)
+}
+
+#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+impl From<(ArgConfig, ArgConfig)> for Configuration {
+    fn from((mut args, mut config): (ArgConfig, ArgConfig)) -> Self {
+        let (ipv4, isos, ipv6) = get_bools(&args.filters, &config.filters);
+        let outfile = args
+            .general
+            .outfile
+            .unwrap_or_else(|| config.general.outfile.unwrap());
+        let export = args
+            .general
+            .export
+            .unwrap_or_else(|| config.general.export.unwrap());
+        let filters = args
+            .filters
+            .protocols
+            .unwrap_or_else(|| config.filters.protocols.unwrap());
+        let view = args
+            .general
+            .view
+            .unwrap_or_else(|| config.general.view.unwrap());
+        let sort = args
+            .general
+            .sort
+            .unwrap_or_else(|| config.general.sort.unwrap());
+        let countries = args
+            .filters
+            .country
+            .unwrap_or_else(|| config.filters.country.unwrap());
+        let ttl = args
+            .general
+            .ttl
+            .unwrap_or_else(|| config.general.ttl.unwrap());
+        let url = args
+            .general
+            .url
+            .unwrap_or_else(|| config.general.url.unwrap());
+
+        let completion = args
+            .filters
+            .completion_percent
+            .unwrap_or_else(|| config.filters.completion_percent.unwrap());
+
+        let age = args
+            .filters
+            .age
+            .unwrap_or_else(|| config.filters.age.unwrap_or_default());
+
+        let rate = if !args.general.rate && config.general.rate {
+            true
+        } else {
+            args.general.rate
+        };
+
+        let timoeut = if args.general.timeout.is_none() && config.general.timeout.is_some() {
+            config.general.timeout
+        } else {
+            args.general.timeout
+        };
+
+        let include = if args.general.include.is_none() && config.general.include.is_some() {
+            std::mem::take(&mut config.general.include)
+        } else {
+            std::mem::take(&mut args.general.include)
+        };
+        let direct = if !args.general.direct && config.general.direct {
+            true
+        } else {
+            args.general.direct
+        };
+
+        Self::new(
+            outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6,
+            completion, age, rate, timoeut, include, direct,
+        )
+    }
+}
+
+#[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
+impl From<ArgConfig> for Configuration {
+    fn from(args: ArgConfig) -> Self {
+        let outfile = args
+            .general
+            .outfile
+            .or_else(|| crate::exit("outfile"))
+            .unwrap();
+        let export = args.general.export.unwrap_or(cli::DEFAULT_MIRROR_COUNT);
+        let filters = args
+            .filters
+            .protocols
+            .unwrap_or_else(|| vec![Protocol::Http, Protocol::Https]);
+        let view = args.general.view.unwrap_or_default();
+        let sort = args.general.sort.unwrap_or_default();
+        let countries = args.filters.country.unwrap_or_default();
+        let ttl = args.general.ttl.unwrap_or(cli::DEFAULT_CACHE_TTL);
+        let url = args
+            .general
+            .url
+            .unwrap_or_else(|| cli::ARCH_URL.to_string());
+
+        let completion = args.filters.completion_percent.unwrap_or(100);
+
+        let age = args.filters.age.unwrap_or(0);
+        let rate = args.general.rate;
+        let timeout = args.general.timeout;
+        let include = args.general.include;
+
+        Self::new(
+            outfile,
+            export,
+            filters,
+            view,
+            sort,
+            countries,
+            ttl,
+            url,
+            args.filters.ipv4,
+            args.filters.isos,
+            args.filters.ipv6,
+            completion,
+            age,
+            rate,
+            timeout,
+            include,
+            args.general.direct,
+        )
     }
 }
