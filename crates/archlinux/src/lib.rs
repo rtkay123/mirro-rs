@@ -14,7 +14,7 @@ use reqwest::{header::LOCATION, ClientBuilder, Response, StatusCode};
 use crate::response::external::Root;
 
 #[cfg(test)]
-mod tests;
+mod test;
 
 mod errors;
 pub use errors::Error;

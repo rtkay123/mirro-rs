@@ -5,7 +5,7 @@ use super::Result;
 use crate::{find_last_sync, get_client, response::external::Root};
 
 const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
-const LOCAL_SOURCE: &str = include_str!("../sample/archlinux.json");
+const LOCAL_SOURCE: &str = include_str!("../../sample/archlinux.json");
 
 async fn response() -> Result<Response> {
     let client = get_client(None)?;
@@ -36,6 +36,32 @@ async fn archlinux_parse_body_remote() -> Result<()> {
 #[tokio::test]
 async fn archlinux_parse_body_local() -> Result<()> {
     assert!(serde_json::from_str::<Root>(LOCAL_SOURCE).is_ok());
+    Ok(())
+}
+
+#[tokio::test]
+async fn check_mirrors() -> Result<()> {
+    let mirrors = crate::get_mirrors(ARCHLINUX_MIRRORS, None);
+    let response = crate::get_response(ARCHLINUX_MIRRORS, None);
+    let (mirrors, response) = tokio::join!(mirrors, response);
+    assert!(mirrors.is_ok());
+    assert!(response.is_ok());
+    Ok(())
+}
+
+#[tokio::test]
+async fn check_mirrors_raw() -> Result<()> {
+    let mirrors = crate::get_mirrors_with_raw(ARCHLINUX_MIRRORS, None).await;
+    assert!(mirrors.is_ok());
+    Ok(())
+}
+
+#[tokio::test]
+async fn check_local_parse() -> Result<()> {
+    let json = include_str!("../../sample/archlinux.json");
+
+    let mirrors = crate::parse_local(json);
+    assert!(mirrors.is_ok());
     Ok(())
 }
 
