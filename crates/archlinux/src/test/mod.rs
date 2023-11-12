@@ -80,10 +80,12 @@ async fn check_last_sync() -> Result<()> {
         let str_val = String::from_utf8_lossy(&response);
         let last_sync = find_last_sync(&str_val);
 
+        dbg!(&last_sync);
         assert!(last_sync.is_ok());
     }
 
     let last_sync = crate::get_last_sync(urls[0], client).await;
+    dbg!(&last_sync);
     assert!(last_sync.is_ok());
     Ok(())
 }
