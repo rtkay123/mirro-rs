@@ -65,7 +65,6 @@ async fn check_local_parse() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 #[cfg(feature = "time")]
 async fn check_last_sync() -> Result<()> {
@@ -83,5 +82,19 @@ async fn check_last_sync() -> Result<()> {
 
         assert!(last_sync.is_ok());
     }
+
+    let last_sync = crate::get_last_sync(urls[0], client).await;
+    assert!(last_sync.is_ok());
+    Ok(())
+}
+
+#[tokio::test]
+#[cfg(feature = "time")]
+async fn rate_mirror() -> Result<()> {
+    let client = get_client(None)?;
+    let url = "https://mirror.ufs.ac.za/archlinux/";
+
+    let res = crate::rate_mirror(url.into(), client).await;
+    assert!(res.is_ok());
     Ok(())
 }
