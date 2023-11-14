@@ -166,6 +166,6 @@ jobs:
 
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
-      - run: cargo publish -p ${BIN_NAME} --all-features --token ${CRATES_TOKEN}
+      - run: cargo publish -p ${BIN_NAME} --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
