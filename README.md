@@ -39,7 +39,13 @@ A mirrorlist manager for Arch Linux systems
 
 ### Installation
 
-`mirro-rs` is available in the AUR. If you're using `paru`:
+Install from the Arch Linux official repository:
+
+```sh
+pacman -S mirro-rs
+```
+
+`mirro-rs` is also available in the AUR. If you're using `paru`:
 
 ```sh
 paru -S mirro-rs-git
