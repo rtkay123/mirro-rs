@@ -62,8 +62,6 @@ jobs:
         run: cargo test --no-run --all-features
       - name: Test
         run: cargo test --all-features
-      - name: cargo install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
 
   coverage:
     runs-on: ubuntu-latest
