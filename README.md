@@ -124,7 +124,7 @@ cargo build --release --features yaml
 > **Note**
 > If you enable all configuration file features, if the configuration directory contains more than one valid file format, the order of priority goes from `toml` -> `json` -> `yaml`.
 
-Sample configuration files are provided in the [example](example) folder.
+Sample configuration files are provided in the [examples](examples) folder.
 
 A minimal `mirro-rs.toml` config file could look like:
 
