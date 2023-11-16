@@ -31,6 +31,8 @@ pub use response::{external::Protocol, internal::*};
 type Result<T> = std::result::Result<T, Error>;
 
 pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db.tar.gz";
+const DATE_FMT: &str = "%d-%b-%Y";
+const TIME_FMT: &str = "%H:%M";
 
 /// Get ArchLinux mirrors from an `json` endpoint and return them in a [minified](ArchLinux) format
 ///
@@ -224,12 +226,31 @@ fn find_last_sync(
         .take(1)
         .collect();
     let item: Vec<_> = item[0].split_whitespace().collect();
-    let date = &item[2];
-    let time = &item[3];
 
-    let dt = format!("{date} {time}");
-    dbg!(&dt);
-    let result = chrono::NaiveDateTime::parse_from_str(&dt, "%d-%b-%Y %H:%M");
+    let result = item
+        .iter()
+        .position(|item| chrono::NaiveDate::parse_from_str(item, DATE_FMT).is_ok())
+        .and_then(|date_index| {
+            item.get(date_index + 1).map(|time| {
+                let date = chrono::NaiveDate::parse_from_str(item[date_index], DATE_FMT);
+                let time = chrono::NaiveTime::parse_from_str(time, TIME_FMT);
 
-    result.map(|res| chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(res, chrono::Utc))
+                if let (Ok(date), Ok(time)) = (date, time) {
+                    let dt = date.and_time(time);
+                    Some(dt)
+                } else {
+                    None
+                }
+            })
+        })
+        .flatten();
+
+    if let Some(res) = result {
+        Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+            res,
+            chrono::Utc,
+        ))
+    } else {
+        Err(todo!())
+    }
 }
