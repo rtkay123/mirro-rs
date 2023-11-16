@@ -1,11 +1,12 @@
 use std::sync::{Arc, Mutex};
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use archlinux::{
     chrono::{DateTime, Local},
     get_client, ArchLinux, Mirror,
 };
 use itertools::Itertools;
+use log::error;
 
 use crate::{
     cli::Protocol,
@@ -21,9 +22,9 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
     let export_count = configuration.export;
 
     let config = Arc::new(Mutex::new(configuration));
-    let (is_fresh, cache_file) = io::handler::is_fresh(Arc::clone(&config));
+    let (is_fresh, cache_file) = io::handler::is_fresh(Arc::clone(&config)).await;
     let mirrorlist = if is_fresh {
-        match std::fs::read_to_string(cache_file.as_ref().unwrap()) {
+        match tokio::fs::read_to_string(cache_file.as_ref().unwrap()).await {
             Ok(contents) => {
                 let result = archlinux::parse_local(&contents);
                 match result {
@@ -111,23 +112,22 @@ async fn get_new_mirrors(
     match archlinux::get_mirrors_with_raw(&url, timeout).await {
         Ok((resp, str_value)) => {
             if let Some(cache) = cache_file {
-                if let Err(e) = std::fs::write(cache, str_value) {
-                    eprintln!("{e}");
+                if let Err(e) = tokio::fs::write(cache, str_value).await {
+                    error!("{e}");
                 }
             }
             Ok(resp)
         }
         Err(e) => {
-            let file = cache_file.map(|f| {
-                std::fs::read_to_string(f)
+            error!("{e}");
+            if let Some(f) = cache_file {
+                tokio::fs::read_to_string(f)
+                    .await
                     .ok()
-                    .map(|f| archlinux::parse_local(&f).ok())
-            });
-            match file {
-                Some(Some(Some(mirrors))) => Ok(mirrors),
-                _ => {
-                    bail!("{e}")
-                }
+                    .and_then(|contents| archlinux::parse_local(&contents).ok())
+                    .context("could not read cache file")
+            } else {
+                bail!("No cache file was configured")
             }
         }
     }
