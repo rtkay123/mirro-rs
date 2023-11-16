@@ -36,9 +36,9 @@ impl IoAsyncHandler {
     }
 
     pub async fn initialise(&mut self, config: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
-        let (is_fresh, cache_file) = is_fresh(Arc::clone(&config));
+        let (is_fresh, cache_file) = is_fresh(Arc::clone(&config)).await;
         if is_fresh {
-            match std::fs::read_to_string(cache_file.as_ref().unwrap()) {
+            match tokio::fs::read_to_string(cache_file.as_ref().unwrap()).await {
                 Ok(contents) => {
                     let result = archlinux::parse_local(&contents);
                     match result {
@@ -52,6 +52,7 @@ impl IoAsyncHandler {
                                 cache_file,
                                 Arc::clone(&self.app),
                                 Arc::clone(&config),
+                                self.client.clone(),
                             )
                             .await
                             {
@@ -62,17 +63,26 @@ impl IoAsyncHandler {
                 }
                 Err(e) => {
                     error!("{e}");
-                    if let Err(e) =
-                        get_new_mirrors(cache_file, Arc::clone(&self.app), Arc::clone(&config))
-                            .await
+                    if let Err(e) = get_new_mirrors(
+                        cache_file,
+                        Arc::clone(&self.app),
+                        Arc::clone(&config),
+                        self.client.clone(),
+                    )
+                    .await
                     {
                         error!("{e}");
                     }
                 }
             }
             // read cached
-        } else if let Err(e) =
-            get_new_mirrors(cache_file, Arc::clone(&self.app), Arc::clone(&config)).await
+        } else if let Err(e) = get_new_mirrors(
+            cache_file,
+            Arc::clone(&self.app),
+            Arc::clone(&config),
+            self.client.clone(),
+        )
+        .await
         {
             error!("{e}");
         }
@@ -337,11 +347,13 @@ async fn check_extra_urls(
 }
 
 // Do we get a new mirrorlist or nah
-pub fn is_fresh(app: Arc<std::sync::Mutex<Configuration>>) -> (bool, Option<std::path::PathBuf>) {
+pub async fn is_fresh(
+    app: Arc<std::sync::Mutex<Configuration>>,
+) -> (bool, Option<std::path::PathBuf>) {
     if let Some(mut cache) = dirs::cache_dir() {
         let crate_name = env!("CARGO_PKG_NAME");
         cache.push(crate_name);
-        if let Err(e) = std::fs::create_dir_all(&cache) {
+        if let Err(e) = tokio::fs::create_dir_all(&cache).await {
             error!("could not create cache directory, {e}");
         }
         cache.push(CACHE_FILE);
@@ -379,21 +391,21 @@ async fn get_new_mirrors(
     cache_file: Option<PathBuf>,
     app: Arc<Mutex<App>>,
     config: Arc<std::sync::Mutex<Configuration>>,
+    client: Client,
 ) -> Result<()> {
     let url = Arc::new(Mutex::new(String::default()));
     let inner = Arc::clone(&url);
-    let timeout = {
+    {
         let mut val = inner.lock().await;
         let source = config.lock().unwrap();
         *val = source.url.clone();
-        source.connection_timeout
     };
     let strs = url.lock().await;
 
-    match archlinux::get_mirrors_with_raw(&strs, timeout).await {
+    match archlinux::get_mirrors_with_client(&strs, client).await {
         Ok((mirrors, str_value)) => {
             if let Some(cache) = cache_file {
-                if let Err(e) = std::fs::write(cache, str_value) {
+                if let Err(e) = tokio::fs::write(cache, str_value).await {
                     error!("{e}");
                 }
             }
@@ -405,17 +417,16 @@ async fn get_new_mirrors(
         }
         Err(e) => {
             warn!("{e}, using old cached file fallback");
-            let file = cache_file.map(|f| {
-                std::fs::read_to_string(f)
-                    .ok()
-                    .map(|f| archlinux::parse_local(&f).ok())
-            });
-            match file {
-                Some(Some(Some(mirrors))) => {
-                    update_state(app, Arc::clone(&config), mirrors).await;
-                }
-                _ => {
-                    bail!("{e}");
+            if let Some(file) = cache_file {
+                let slice = tokio::fs::read_to_string(file).await;
+
+                match slice.ok().and_then(|f| archlinux::parse_local(&f).ok()) {
+                    Some(mirrors) => {
+                        update_state(app, Arc::clone(&config), mirrors).await;
+                    }
+                    _ => {
+                        bail!("{e}");
+                    }
                 }
             }
         }
