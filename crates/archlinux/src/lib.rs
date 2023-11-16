@@ -89,12 +89,21 @@ pub async fn get_mirrors_with_raw(
     with_timeout: Option<u64>,
 ) -> Result<(ArchLinux, String)> {
     let response = get_response(source, with_timeout).await?;
+    deserialise_mirrors(response).await
+}
 
+async fn deserialise_mirrors(response: Response) -> Result<(ArchLinux, String)> {
     let root: Root = response.json().await?;
 
     let value = serde_json::to_string(&root)?;
-
     Ok((ArchLinux::from(root), value))
+}
+
+/// The same as [get_mirrors_with_raw](get_mirrors_with_raw) but uses a specified
+/// [Client](reqwest::Client) for requests
+pub async fn get_mirrors_with_client(source: &str, client: Client) -> Result<(ArchLinux, String)> {
+    let response = client.get(source).send().await?;
+    deserialise_mirrors(response).await
 }
 
 /// Parses a `string slice` to the [ArchLinux](ArchLinux) type
