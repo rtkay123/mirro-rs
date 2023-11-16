@@ -2,6 +2,7 @@ use reqwest::StatusCode;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[non_exhaustive]
 /// Error type definitions returned by the crate
 pub enum Error {
     /// The connection could not be made (perhaps a network error is
@@ -27,5 +28,8 @@ pub enum Error {
     /// There was an error performing the request
     #[cfg(feature = "time")]
     #[error("could not parse time")]
-    TimeError(#[from] chrono::ParseError),
+    Time(#[from] chrono::ParseError),
+    #[error("{0}")]
+    /// There was some other error
+    Other(String),
 }

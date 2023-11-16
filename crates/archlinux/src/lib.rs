@@ -31,8 +31,6 @@ pub use response::{external::Protocol, internal::*};
 type Result<T> = std::result::Result<T, Error>;
 
 pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db.tar.gz";
-const DATE_FMT: &str = "%d-%b-%Y";
-const TIME_FMT: &str = "%H:%M";
 
 /// Get ArchLinux mirrors from an `json` endpoint and return them in a [minified](ArchLinux) format
 ///
@@ -212,14 +210,15 @@ pub async fn get_last_sync(
         .await?;
 
     let str_val = String::from_utf8_lossy(&body);
-    let x = find_last_sync(&str_val).map_err(Error::TimeError)?;
+    let x = find_last_sync(&str_val)?;
     Ok((x, mirror))
 }
 
 #[cfg(feature = "time")]
-fn find_last_sync(
-    body: &str,
-) -> std::result::Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
+fn find_last_sync(body: &str) -> std::result::Result<chrono::DateTime<chrono::Utc>, Error> {
+    const DATE_FMT: &str = "%d-%b-%Y";
+    const TIME_FMT: &str = "%H:%M";
+
     let item: Vec<_> = body
         .lines()
         .filter(|f| f.contains("lastsync"))
@@ -251,6 +250,8 @@ fn find_last_sync(
             chrono::Utc,
         ))
     } else {
-        Err(todo!())
+        Err(Error::Other(format!(
+            "{DATE_FMT} {TIME_FMT} pattern was not found in last sync"
+        )))
     }
 }

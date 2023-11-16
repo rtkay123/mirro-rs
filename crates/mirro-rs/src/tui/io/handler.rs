@@ -38,7 +38,12 @@ impl IoAsyncHandler {
     pub async fn initialise(&mut self, config: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
         let (is_fresh, cache_file) = is_fresh(Arc::clone(&config));
         if is_fresh {
-            match std::fs::read_to_string(cache_file.as_ref().unwrap()) {
+            match std::fs::read_to_string(
+                cache_file
+                    .as_ref()
+                    // this should always pass
+                    .expect("fresh mirrors detected but there's no cache file"),
+            ) {
                 Ok(contents) => {
                     let result = archlinux::parse_local(&contents);
                     match result {
@@ -207,8 +212,14 @@ impl IoAsyncHandler {
                         archlinux::Error::Request(e) => {
                             error!("{e}");
                         }
-                        archlinux::Error::TimeError(e) => {
+                        archlinux::Error::Time(e) => {
                             error!("{e}")
+                        }
+                        archlinux::Error::Other(e) => {
+                            error!("{e}")
+                        }
+                        _ => {
+                            error!("there was an error with the request")
                         }
                     },
                     Err(e) => error!("{e}"),
