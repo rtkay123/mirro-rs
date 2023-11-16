@@ -200,36 +200,19 @@ pub async fn get_last_sync(
     client: Client,
 ) -> Result<(chrono::DateTime<chrono::Utc>, String)> {
     let mirror = mirror.into();
+    let lastsync_url = format!("{mirror}lastsync");
 
-    let body = client
-        .get(&mirror)
+    let timestamp = client
+        .get(&lastsync_url)
         .send()
         .await
         .map_err(|e| Error::Request(e.to_string()))?
-        .bytes()
+        .text()
         .await?;
 
-    let str_val = String::from_utf8_lossy(&body);
-    let x = find_last_sync(&str_val).map_err(Error::TimeError)?;
-    Ok((x, mirror))
-}
+    let result = chrono::NaiveDateTime::parse_from_str(&timestamp, "%s")
+        .map(|res| chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(res, chrono::Utc))
+        .map_err(Error::TimeError)?;
 
-#[cfg(feature = "time")]
-fn find_last_sync(
-    body: &str,
-) -> std::result::Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
-    let item: Vec<_> = body
-        .lines()
-        .filter(|f| f.contains("lastsync"))
-        .take(1)
-        .collect();
-    let item: Vec<_> = item[0].split_whitespace().collect();
-    let date = &item[2];
-    let time = &item[3];
-
-    let dt = format!("{date} {time}");
-    dbg!(&dt);
-    let result = chrono::NaiveDateTime::parse_from_str(&dt, "%d-%b-%Y %H:%M");
-
-    result.map(|res| chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(res, chrono::Utc))
+    Ok((result, mirror))
 }
