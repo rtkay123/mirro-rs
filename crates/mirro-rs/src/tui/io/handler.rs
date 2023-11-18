@@ -12,8 +12,8 @@ use std::{
 };
 
 use itertools::Itertools;
-use log::{error, info, warn};
 use tokio::sync::Mutex;
+use tracing::{error, info, warn};
 
 use crate::{
     config::Configuration,

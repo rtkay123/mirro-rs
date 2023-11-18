@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use log::error;
+use tracing::error;
 
 use super::key::Key;
 use super::InputEvent;

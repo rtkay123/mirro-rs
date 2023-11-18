@@ -6,7 +6,7 @@ use archlinux::{
     get_client, ArchLinux, Mirror,
 };
 use itertools::Itertools;
-use log::error;
+use tracing::error;
 
 use crate::{
     cli::Protocol,

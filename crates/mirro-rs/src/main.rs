@@ -1,5 +1,6 @@
 mod cli;
 mod config;
+mod dbg;
 mod direct;
 #[cfg(test)]
 mod test;
@@ -12,6 +13,7 @@ use self::config::watch_config;
 
 #[tokio::main]
 async fn main() {
+    dbg::log();
     let args = <cli::ArgConfig as clap::Parser>::parse();
 
     #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
@@ -39,7 +41,7 @@ async fn main() {
             if let Err(e) = systemd_journal_logger::JournalLog::new().unwrap().install() {
                 eprintln!("{e}");
             } else {
-                log::set_max_level(log::LevelFilter::Info);
+                //          log::set_max_level(log::LevelFilter::Info);
             }
         }
 
