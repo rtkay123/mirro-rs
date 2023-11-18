@@ -202,7 +202,23 @@ pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Du
     .boxed()
 }
 
+/// Gets a mirror's last sync time
+/// # Parameters
+/// - `mirror` - The mirror to get the last sync time for
+/// - `client` - A [reqwest::Client](reqwest::Client)
 ///
+/// # Example
+///
+/// ```rust
+/// # use mirrors_arch::{get_client, get_last_sync};
+/// # async fn foo()->Result<(), Box<dyn std::error::Error>>{
+/// # let mirror = String::default();
+/// # let client = get_client(Some(5))?;
+/// let (date_time, mirror) = get_last_sync(mirror, client).await?;
+/// #  Ok(())
+/// # }
+/// ```
+
 #[cfg(feature = "time")]
 pub async fn get_last_sync(
     mirror: impl Into<String>,
