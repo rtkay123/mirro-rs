@@ -1,6 +1,6 @@
 use std::io::Error;
 
-use tracing::{error, info};
+use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub fn log(skip_tui: bool) {
@@ -11,7 +11,7 @@ pub fn log(skip_tui: bool) {
 
     let err_fn = |e: Error| {
         #[cfg(unix)]
-        error!("couldn't connect to journald: {}", e);
+        tracing::error!("couldn't connect to journald: {}", e);
     };
 
     #[cfg(unix)]
