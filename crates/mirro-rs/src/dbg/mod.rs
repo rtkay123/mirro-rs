@@ -8,6 +8,7 @@ pub fn log(skip_tui: bool) {
     );
 
     let err_fn = |e| {
+        #[cfg(unix)]
         error!("couldn't connect to journald: {}", e);
     };
 
