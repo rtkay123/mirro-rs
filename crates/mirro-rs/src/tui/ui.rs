@@ -16,7 +16,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table},
     Frame,
 };
-use tracing::info;
+use tracing::{debug, info, trace};
 use tui_logger::TuiLoggerWidget;
 
 use crate::cli::{Protocol, ViewSort};
@@ -152,7 +152,7 @@ pub fn ui(
             f.render_widget(Clear, area);
             if exporting.load(std::sync::atomic::Ordering::Relaxed) && rate_enabled {
                 while let Ok(pos) = percentage.try_recv() {
-                    info!("exporting mirrors: progress {pos:.2}%");
+                    debug!("exporting mirrors: progress {pos:.2}%");
                     let gauge = Gauge::default()
                         .gauge_style(Style::default().fg(Color::Blue).bg(Color::Black))
                         .block(create_block("Exporting mirrors"))

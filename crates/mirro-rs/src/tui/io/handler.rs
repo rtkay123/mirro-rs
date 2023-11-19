@@ -257,6 +257,7 @@ impl IoAsyncHandler {
         popup: Option<Arc<Mutex<PopUpState>>>,
     ) {
         if let Some(dir) = outfile.parent() {
+            info!(count = %export_count, "making export of mirrors");
             if tokio::fs::create_dir_all(dir).await.is_ok() {
                 let output = &selected_mirrors[if selected_mirrors.len() >= export_count {
                     ..export_count
@@ -268,7 +269,11 @@ impl IoAsyncHandler {
                     .map(|f| format!("Server = {f}$repo/os/$arch"))
                     .collect();
 
-                let _ = tokio::fs::write(&outfile, output.join("\n")).await;
+                if let Err(e) = tokio::fs::write(&outfile, output.join("\n")).await {
+                    error!("{e}");
+                } else {
+                    info!("Your mirrorlist has been exported");
+                }
                 if let Some(popup) = popup {
                     let mut state = popup.lock().await;
                     state.popup_text = format!(
@@ -281,7 +286,6 @@ impl IoAsyncHandler {
         if let Some(in_progress) = in_progress {
             in_progress.store(false, std::sync::atomic::Ordering::Relaxed);
         }
-        info!("Your mirrorlist has been exported");
     }
 
     pub async fn handle_io_event(
