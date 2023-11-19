@@ -6,7 +6,7 @@ use archlinux::{
     get_client, ArchLinux, Mirror,
 };
 use itertools::Itertools;
-use log::error;
+use tracing::error;
 
 use crate::{
     cli::Protocol,
@@ -30,13 +30,13 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
                 match result {
                     Ok(mirrors) => mirrors,
                     Err(e) => {
-                        eprintln!("{e}");
+                        error!("{e}");
                         get_new_mirrors(Arc::clone(&config), cache_file.as_ref()).await?
                     }
                 }
             }
             Err(e) => {
-                eprintln!("{e}");
+                error!("{e}");
                 get_new_mirrors(Arc::clone(&config), cache_file.as_ref()).await?
             }
         }
@@ -91,7 +91,7 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
         .await
         .await
         {
-            eprintln!("{e}");
+            error!("{e}");
         }
     } else {
         IoAsyncHandler::write_to_file(outfile, &results, export_count as usize, None, None).await;
