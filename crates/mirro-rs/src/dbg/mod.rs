@@ -12,6 +12,7 @@ pub fn log(skip_tui: bool) {
         error!("couldn't connect to journald: {}", e);
     };
 
+    #[cfg(unix)]
     match (tracing_journald::layer(), skip_tui) {
         (Ok(layer), true) => {
             registry
@@ -35,6 +36,13 @@ pub fn log(skip_tui: bool) {
             registry.with(tui_logger::tracing_subscriber_layer()).init();
             err_fn(e);
         }
+    }
+
+    #[cfg(not(unix))]
+    if skip_tui {
+        registry.with(tracing_subscriber::fmt::layer()).init();
+    } else {
+        registry.with(tui_logger::tracing_subscriber_layer()).init();
     }
 
     let pkg_ver = env!("CARGO_PKG_VERSION");
