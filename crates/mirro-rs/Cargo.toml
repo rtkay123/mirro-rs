@@ -20,7 +20,6 @@ clap = { version = "4.0.32", features = ["derive"] }
 crossterm = "0.27.0"
 dirs = "5.0.1"
 itertools = "0.11.0"
-log = "0.4.17"
 archlinux = { package = "mirrors-arch", version = "0.1.1", path = "../archlinux", features = ["time"] }
 notify = { version = "6.1.1", optional = true }
 serde = { version = "1.0.151", features = ["derive"] }
@@ -28,12 +27,14 @@ serde_json = { version = "1.0.91", optional = true }
 serde_yaml = { version = "0.9.16", optional = true }
 tokio = { version = "1.23.0", features = ["rt-multi-thread", "macros", "fs"] }
 toml = { version = "0.8.8", optional = true }
-tui-logger = { version = "0.10.0", features = ["crossterm"], default-features = false }
+tui-logger = { version = "0.10.0", features = ["crossterm", "tracing-support"], default-features = false }
 unicode-width = "0.1.10"
 ratatui = { version = "0.24.0", features = ["crossterm"], default-features = false }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
-[target.'cfg(target_os = "linux")'.dependencies]
-systemd-journal-logger = "2.1.0"
+[target.'cfg(unix)'.dependencies]
+tracing-journald = "0.3.0"
 
 [features]
 default = []

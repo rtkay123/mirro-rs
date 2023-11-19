@@ -5,8 +5,8 @@ use std::{
     sync::{mpsc, Arc, Mutex},
 };
 
-use log::error;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use tracing::error;
 
 use crate::config::read_config_file;
 

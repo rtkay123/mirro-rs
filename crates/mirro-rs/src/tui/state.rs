@@ -10,11 +10,11 @@ use crate::{
 };
 
 use itertools::Itertools;
-use log::{error, info, warn};
 use ratatui::{
     style::{Color, Modifier, Style},
     widgets::{Cell, Row},
 };
+use tracing::{error, info, warn};
 use unicode_width::UnicodeWidthStr;
 
 use crate::tui::actions::Action;

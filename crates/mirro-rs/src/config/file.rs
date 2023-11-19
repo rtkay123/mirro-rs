@@ -3,7 +3,7 @@ use std::{io::ErrorKind, path::PathBuf};
 use std::path::Path;
 
 use itertools::Itertools;
-use log::error;
+use tracing::error;
 
 use crate::cli::ArgConfig;
 

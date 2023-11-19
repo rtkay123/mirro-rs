@@ -1,11 +1,14 @@
 mod cli;
 mod config;
+mod dbg;
 mod direct;
 #[cfg(test)]
 mod test;
 mod tui;
 
 use std::sync::{Arc, Mutex};
+
+use tracing::error;
 
 #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
 use self::config::watch_config;
@@ -33,18 +36,11 @@ async fn main() {
     #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
     let config = config::Configuration::from(args);
 
-    if config.direct {
-        #[cfg(target_os = "linux")]
-        {
-            if let Err(e) = systemd_journal_logger::JournalLog::new().unwrap().install() {
-                eprintln!("{e}");
-            } else {
-                log::set_max_level(log::LevelFilter::Info);
-            }
-        }
+    dbg::log(config.direct);
 
+    if config.direct {
         if let Err(e) = direct::begin(config).await {
-            eprintln!("{e}")
+            error!("{e}")
         }
     } else {
         let config = Arc::new(Mutex::new(config));
