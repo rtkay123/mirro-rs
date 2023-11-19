@@ -49,9 +49,6 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
     let app = Arc::new(Mutex::new(App::new(sync_io_tx, Arc::clone(&configuration))));
     let inner = Arc::clone(&app);
 
-    //    tui_logger::init_logger(LevelFilter::Trace).unwrap();
-    //    tui_logger::set_default_level(log::LevelFilter::Debug);
-
     let popup_state = Arc::new(Mutex::new(PopUpState::new()));
     {
         let popup_state = Arc::clone(&popup_state);
