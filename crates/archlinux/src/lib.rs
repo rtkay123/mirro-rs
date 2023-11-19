@@ -23,6 +23,7 @@ pub use reqwest::Client;
 
 mod response;
 #[cfg(feature = "time")]
+#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 #[doc(no_inline)]
 pub use chrono;
 
@@ -70,7 +71,7 @@ async fn get_response(source: &str, with_timeout: Option<u64>) -> Result<Respons
     Ok(response)
 }
 
-/// The same as [get_mirrors](get_mirrors) but returns a tuple including the json as a
+/// The same as [get_mirrors] but returns a tuple including the json as a
 /// `String`
 ///
 /// # Example
@@ -99,14 +100,14 @@ async fn deserialise_mirrors(response: Response) -> Result<(ArchLinux, String)> 
     Ok((ArchLinux::from(root), value))
 }
 
-/// The same as [get_mirrors_with_raw](get_mirrors_with_raw) but uses a specified
-/// [Client](reqwest::Client) for requests
+/// The same as [get_mirrors_with_raw] but uses a specified
+/// [Client] for requests
 pub async fn get_mirrors_with_client(source: &str, client: Client) -> Result<(ArchLinux, String)> {
     let response = client.get(source).send().await?;
     deserialise_mirrors(response).await
 }
 
-/// Parses a `string slice` to the [ArchLinux](ArchLinux) type
+/// Parses a `string slice` to the [ArchLinux] type
 ///
 /// # Parameters
 /// - `contents` - A `json` string slice to be parsed and returned as a [mirrorlist](ArchLinux)
@@ -157,7 +158,7 @@ pub fn get_client(with_timeout: Option<u64>) -> Result<Client> {
 ///
 /// # Parameters
 /// - `url` - The mirrorlist
-/// - `client` - The client returned from [get_client](get_client)
+/// - `client` - The client returned from [get_client]
 ///
 /// # Example
 ///
@@ -205,7 +206,7 @@ pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Du
 /// Gets a mirror's last sync time
 /// # Parameters
 /// - `mirror` - The mirror to get the last sync time for
-/// - `client` - A [reqwest::Client](reqwest::Client)
+/// - `client` - A [reqwest::Client]
 ///
 /// # Example
 ///
@@ -220,6 +221,7 @@ pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Du
 /// ```
 
 #[cfg(feature = "time")]
+#[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 pub async fn get_last_sync(
     mirror: impl Into<String>,
     client: Client,
