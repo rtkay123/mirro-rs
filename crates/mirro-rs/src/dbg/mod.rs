@@ -1,3 +1,5 @@
+use std::io::Error;
+
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -7,7 +9,7 @@ pub fn log(skip_tui: bool) {
             .unwrap_or_else(|_| "mirro_rs=debug".into()),
     );
 
-    let err_fn = |e| {
+    let err_fn = |e: Error| {
         #[cfg(unix)]
         error!("couldn't connect to journald: {}", e);
     };
