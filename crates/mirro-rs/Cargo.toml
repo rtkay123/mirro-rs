@@ -20,7 +20,7 @@ clap = { version = "4.0.32", features = ["derive"] }
 crossterm = "0.27.0"
 dirs = "5.0.1"
 itertools = "0.11.0"
-archlinux = { package = "mirrors-arch", version = "0.1.1", path = "../archlinux", features = ["time"] }
+archlinux = { package = "mirrors-arch", version = "0.1.3", path = "../archlinux", features = ["time"] }
 notify = { version = "6.1.1", optional = true }
 serde = { version = "1.0.151", features = ["derive"] }
 serde_json = { version = "1.0.91", optional = true }

@@ -1,4 +1,6 @@
-use tracing::{error, info};
+use std::io::Error;
+
+use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub fn log(skip_tui: bool) {
@@ -7,11 +9,12 @@ pub fn log(skip_tui: bool) {
             .unwrap_or_else(|_| "mirro_rs=debug".into()),
     );
 
-    let err_fn = |e| {
+    let err_fn = |e: Error| {
         #[cfg(unix)]
-        error!("couldn't connect to journald: {}", e);
+        tracing::error!("couldn't connect to journald: {}", e);
     };
 
+    #[cfg(unix)]
     match (tracing_journald::layer(), skip_tui) {
         (Ok(layer), true) => {
             registry
@@ -35,6 +38,13 @@ pub fn log(skip_tui: bool) {
             registry.with(tui_logger::tracing_subscriber_layer()).init();
             err_fn(e);
         }
+    }
+
+    #[cfg(not(unix))]
+    if skip_tui {
+        registry.with(tracing_subscriber::fmt::layer()).init();
+    } else {
+        registry.with(tui_logger::tracing_subscriber_layer()).init();
     }
 
     let pkg_ver = env!("CARGO_PKG_VERSION");

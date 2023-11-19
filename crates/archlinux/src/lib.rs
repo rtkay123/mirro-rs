@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(
     missing_docs,
     rustdoc::broken_intra_doc_links,
