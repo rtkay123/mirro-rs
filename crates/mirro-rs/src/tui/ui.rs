@@ -16,7 +16,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table},
     Frame,
 };
-use tracing::{debug, info, trace};
+use tracing::debug;
 use tui_logger::TuiLoggerWidget;
 
 use crate::cli::{Protocol, ViewSort};
