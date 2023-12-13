@@ -2,10 +2,13 @@ version: 2
 updates:
   # Maintain dependencies for Cargo
   - package-ecosystem: "cargo"
-    directory: "/crates/archlinux" # Location of package manifest
+    directory: "/" # Location of package manifest
     schedule:
-      interval: "monthly"
-  - package-ecosystem: "cargo"
-    directory: "/crates/mirro-rs" # Location of package manifest
+      interval: "daily"
+  
+  # Maintain dependencies for Cargo
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: "monthly"
+      # Check for updates to GitHub Actions every week
+      interval: "daily"
