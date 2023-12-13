@@ -186,7 +186,7 @@ jobs:
           useGitmojis: false
 
       - name: Create Release
-        uses: ncipollo/release-action@v1.12.0
+        uses: ncipollo/release-action@v1.13.0
         with:
           allowUpdates: true
           draft: false
