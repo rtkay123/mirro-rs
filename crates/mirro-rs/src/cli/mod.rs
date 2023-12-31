@@ -88,7 +88,7 @@ pub struct Filters {
     #[arg(short)]
     #[serde(rename = "countries")]
     #[serde(default)]
-    pub country: Option<Vec<String>>,
+    pub country: Vec<String>,
 
     /// Filters to use on mirrorlists
     #[arg(short, long, value_enum)]

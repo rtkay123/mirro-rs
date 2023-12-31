@@ -66,7 +66,7 @@ fn async_watch(
                         config_file.filters.protocols.unwrap(),
                         config_file.general.view.unwrap(),
                         config_file.general.sort.unwrap(),
-                        config_file.filters.country.unwrap(),
+                        config_file.filters.country,
                         config_file.general.ttl.unwrap(),
                         config_file.general.url.unwrap(),
                         config_file.filters.ipv4,

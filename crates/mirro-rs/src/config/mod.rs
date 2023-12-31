@@ -137,10 +137,11 @@ impl From<(ArgConfig, ArgConfig)> for Configuration {
             .general
             .sort
             .unwrap_or_else(|| config.general.sort.unwrap());
-        let countries = args
-            .filters
-            .country
-            .unwrap_or_else(|| config.filters.country.unwrap());
+        let countries = if !args.filters.country.is_empty() {
+            args.filters.country
+        } else {
+            config.filters.country
+        };
         let ttl = args
             .general
             .ttl
@@ -205,7 +206,7 @@ impl From<ArgConfig> for Configuration {
             .unwrap_or_else(|| vec![Protocol::Http, Protocol::Https]);
         let view = args.general.view.unwrap_or_default();
         let sort = args.general.sort.unwrap_or_default();
-        let countries = args.filters.country.unwrap_or_default();
+        let countries = args.filters.country;
         let ttl = args.general.ttl.unwrap_or(cli::DEFAULT_CACHE_TTL);
         let url = args
             .general
