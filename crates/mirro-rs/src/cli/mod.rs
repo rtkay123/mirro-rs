@@ -92,8 +92,8 @@ pub struct Filters {
 
     /// Filters to use on mirrorlists
     #[arg(short, long, value_enum)]
-    #[serde(default = "filters")]
-    pub protocols: Option<Vec<Protocol>>,
+    #[serde(default = "default_filters")]
+    pub protocols: Vec<Protocol>,
 
     ///Only return mirrors that support IPv4.
     #[arg(long)]
@@ -152,8 +152,8 @@ fn view() -> Option<ViewSort> {
     Some(ViewSort::Alphabetical)
 }
 
-fn filters() -> Option<Vec<Protocol>> {
-    Some(vec![Protocol::Http, Protocol::Https])
+pub fn default_filters() -> Vec<Protocol> {
+    vec![Protocol::Http, Protocol::Https]
 }
 
 #[cfg_attr(test, derive(Default))]

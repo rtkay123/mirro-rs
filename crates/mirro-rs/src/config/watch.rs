@@ -63,7 +63,7 @@ fn async_watch(
                     let parsed_config = Configuration::new(
                         config_file.general.outfile.unwrap(),
                         config_file.general.export.unwrap(),
-                        config_file.filters.protocols.unwrap(),
+                        config_file.filters.protocols,
                         config_file.general.view.unwrap(),
                         config_file.general.sort.unwrap(),
                         config_file.filters.country,

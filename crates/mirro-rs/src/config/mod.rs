@@ -125,10 +125,11 @@ impl From<(ArgConfig, ArgConfig)> for Configuration {
             .general
             .export
             .unwrap_or_else(|| config.general.export.unwrap());
-        let filters = args
-            .filters
-            .protocols
-            .unwrap_or_else(|| config.filters.protocols.unwrap());
+        let filters = if !args.filters.protocols.is_empty() {
+            args.filters.protocols
+        } else {
+            config.filters.protocols
+        };
         let view = args
             .general
             .view
@@ -200,10 +201,12 @@ impl From<ArgConfig> for Configuration {
             .or_else(|| crate::exit("outfile"))
             .unwrap();
         let export = args.general.export.unwrap_or(cli::DEFAULT_MIRROR_COUNT);
-        let filters = args
-            .filters
-            .protocols
-            .unwrap_or_else(|| vec![Protocol::Http, Protocol::Https]);
+        let filters = if !args.filters.protocols.is_empty() {
+            args.filters.protocols
+        } else {
+            use crate::cli::default_filters;
+            default_filters()
+        };
         let view = args.general.view.unwrap_or_default();
         let sort = args.general.sort.unwrap_or_default();
         let countries = args.filters.country;
