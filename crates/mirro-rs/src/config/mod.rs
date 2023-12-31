@@ -32,7 +32,7 @@ pub struct Configuration {
     pub age: u16,
     pub rate: bool,
     pub connection_timeout: Option<u64>,
-    pub include: Option<Vec<String>>,
+    pub include: Vec<String>,
     pub direct: bool,
 }
 
@@ -54,7 +54,7 @@ impl Configuration {
         age: u16,
         rate: bool,
         connection_timeout: Option<u64>,
-        include: Option<Vec<String>>,
+        include: Vec<String>,
         direct: bool,
     ) -> Self {
         if ipv4 {
@@ -172,7 +172,7 @@ impl From<(ArgConfig, ArgConfig)> for Configuration {
             args.general.timeout
         };
 
-        let include = if args.general.include.is_none() && config.general.include.is_some() {
+        let include = if args.general.include.is_empty() && !config.general.include.is_empty() {
             std::mem::take(&mut config.general.include)
         } else {
             std::mem::take(&mut args.general.include)

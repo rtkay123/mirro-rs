@@ -68,7 +68,8 @@ pub struct Args {
 
     /// Extra CDNs to check for mirrors
     #[arg(short, long)]
-    pub include: Option<Vec<String>>,
+    #[serde(default)]
+    pub include: Vec<String>,
 
     /// Skip TUI session and directly export the mirrorlist
     #[arg(short, long)]

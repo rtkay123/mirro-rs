@@ -15,7 +15,7 @@ use crate::{
 };
 
 pub async fn begin(configuration: Configuration) -> Result<()> {
-    let included = configuration.include.clone();
+    let mut included = configuration.include.clone();
     let connection_timeout = configuration.connection_timeout;
     let rate = configuration.rate;
     let outfile = configuration.outfile.clone();
@@ -72,9 +72,7 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
         .map(|f| f.url.clone())
         .collect_vec();
 
-    if let Some(mut included) = included {
-        results.append(&mut included);
-    }
+    results.append(&mut included);
 
     let client = get_client(connection_timeout)?;
 

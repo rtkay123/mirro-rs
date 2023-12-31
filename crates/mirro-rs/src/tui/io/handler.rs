@@ -133,7 +133,7 @@ impl IoAsyncHandler {
 
         let client = self.client.clone();
         let included_urls = tokio::spawn(async move {
-            if let Some(extra_urls) = extra_urls {
+            if !extra_urls.is_empty() {
                 let results = check_extra_urls(extra_urls, age, client).await;
                 Some(results)
             } else {
