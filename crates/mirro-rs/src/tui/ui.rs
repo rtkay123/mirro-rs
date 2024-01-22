@@ -208,21 +208,23 @@ fn draw_table(app: &mut App, f: &mut Frame, region: Rect) {
 
     let header = Row::new(header_cells).height(1);
 
-    let t = Table::new(if pagination_fragments.is_empty() {
-        rows
-    } else {
-        app.view(&pagination_fragments).to_vec()
-    })
+    let t = Table::new(
+        if pagination_fragments.is_empty() {
+            rows
+        } else {
+            app.view(&pagination_fragments).to_vec()
+        },
+        [
+            Constraint::Percentage(6),
+            Constraint::Length(33),
+            Constraint::Min(10),
+        ],
+    )
     .header(header)
     .block(create_block(format!(
         "Results from ({}) countries",
         app.filtered_countries.len()
-    )))
-    .widths(&[
-        Constraint::Percentage(6),
-        Constraint::Length(33),
-        Constraint::Min(10),
-    ]);
+    )));
 
     f.render_widget(t, region);
 }
@@ -250,14 +252,16 @@ fn draw_help(actions: &Actions) -> Table {
         }
     });
 
-    Table::new(rows)
-        .block(create_block("Help"))
-        .widths(&[
+    Table::new(
+        rows,
+        [
             Constraint::Percentage(20),
             Constraint::Percentage(20),
             Constraint::Percentage(60),
-        ])
-        .column_spacing(1)
+        ],
+    )
+    .block(create_block("Help"))
+    .column_spacing(1)
 }
 
 fn check_size(area: &Rect, width: u16, height: u16) -> bool {
@@ -385,36 +389,36 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
     let mirror_count = app.selected_mirrors.len();
     let config = app.configuration.lock().unwrap();
 
-    let t = Table::new(items)
-        // You can set the style of the entire Table.
-        .style(Style::default().fg(Color::White))
-        // It has an optional header, which is simply a Row always visible at the top.
-        .header(headers)
-        // As any other widget, a Table can be wrapped in a Block.
-        .block(create_block(if mirror_count < 1 {
-            format!("Selection({mirror_count})")
-        } else {
-            format!(
-                "Selection({})▶ ({}) to {}",
-                mirror_count,
-                if config.export as usize <= mirror_count {
-                    config.export.to_string()
-                } else {
-                    "ALL".to_string()
-                },
-                config.outfile.display()
-            )
-        }))
-        // Columns widths are constrained in the same way as Layout...
-        .widths(&[
+    let t = Table::new(
+        items,
+        [
             Constraint::Percentage(16),
             Constraint::Percentage(16),
             Constraint::Percentage(16),
             Constraint::Percentage(16),
             Constraint::Percentage(16),
             Constraint::Percentage(20),
-        ]);
-    // ...and they can be separated by a fixed spacing.
+        ],
+    )
+    // You can set the style of the entire Table.
+    .style(Style::default().fg(Color::White))
+    // It has an optional header, which is simply a Row always visible at the top.
+    .header(headers)
+    // As any other widget, a Table can be wrapped in a Block.
+    .block(create_block(if mirror_count < 1 {
+        format!("Selection({mirror_count})")
+    } else {
+        format!(
+            "Selection({})▶ ({}) to {}",
+            mirror_count,
+            if config.export as usize <= mirror_count {
+                config.export.to_string()
+            } else {
+                "ALL".to_string()
+            },
+            config.outfile.display()
+        )
+    }));
 
     t
 }
