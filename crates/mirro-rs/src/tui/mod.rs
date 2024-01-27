@@ -18,7 +18,6 @@ use std::{
     time::Duration,
 };
 use tokio::sync::Mutex;
-use tracing::debug;
 
 use ratatui::{backend::CrosstermBackend, Terminal};
 
@@ -54,7 +53,6 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
         let popup_state = Arc::clone(&popup_state);
         tokio::spawn(async move {
             let mut handler = IoAsyncHandler::new(inner, popup_state, client);
-            debug!("Getting Arch Linux mirrors. Please wait");
             while let Some(io_event) = sync_io_rx.recv().await {
                 handler
                     .handle_io_event(io_event, Arc::clone(&configuration))

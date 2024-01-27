@@ -1,6 +1,6 @@
 use archlinux::{
     chrono::{DateTime, Utc},
-    ArchLinux, Country,
+    ArchLinux, Country, Mirror,
 };
 use std::sync::{atomic::AtomicBool, mpsc::Sender, Arc, Mutex};
 
@@ -66,6 +66,21 @@ pub struct SelectedMirror {
     pub duration_stddev: Option<f64>,
     pub last_sync: Option<DateTime<Utc>>,
     pub url: String,
+}
+
+impl From<(&Mirror, &str)> for SelectedMirror {
+    fn from((f, country_code): (&Mirror, &str)) -> Self {
+        Self {
+            country_code: country_code.to_owned(),
+            protocol: Protocol::from(f.protocol),
+            completion_pct: f.completion_pct,
+            delay: f.delay,
+            score: f.score,
+            duration_stddev: f.duration_stddev,
+            last_sync: f.last_sync,
+            url: f.url.to_string(),
+        }
+    }
 }
 
 impl App {

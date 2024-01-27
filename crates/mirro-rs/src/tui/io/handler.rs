@@ -13,11 +13,12 @@ use std::{
 
 use itertools::Itertools;
 use tokio::sync::Mutex;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     config::Configuration,
-    tui::state::{App, PopUpState},
+    direct::filter_result,
+    tui::state::{App, PopUpState, SelectedMirror},
 };
 
 use super::IoEvent;
@@ -36,33 +37,32 @@ impl IoAsyncHandler {
     }
 
     pub async fn initialise(&mut self, config: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
+        debug!("Getting Arch Linux mirrors. Please wait");
         let (is_fresh, cache_file) = is_fresh(Arc::clone(&config)).await;
         if is_fresh {
             match tokio::fs::read_to_string(cache_file.as_ref().unwrap()).await {
-                Ok(contents) => {
-                    let result = archlinux::parse_local(&contents);
-                    match result {
-                        Ok(mirrors) => {
-                            show_stats(&mirrors.countries, is_fresh);
+                Ok(contents) => match archlinux::parse_local(&contents) {
+                    Ok(mirrors) => {
+                        show_stats(&mirrors.countries, is_fresh);
 
-                            update_state(Arc::clone(&self.app), Arc::clone(&config), mirrors).await;
-                        }
-                        Err(e) => {
-                            if let Err(f) = get_new_mirrors(
-                                cache_file,
-                                Arc::clone(&self.app),
-                                Arc::clone(&config),
-                                self.client.clone(),
-                            )
-                            .await
-                            {
-                                error!("{e}, {f}");
-                            }
+                        update_state(Arc::clone(&self.app), Arc::clone(&config), mirrors).await;
+                    }
+                    Err(e) => {
+                        error!("cache could not be deserialised, reconstructing...");
+                        if let Err(f) = get_new_mirrors(
+                            cache_file,
+                            Arc::clone(&self.app),
+                            Arc::clone(&config),
+                            self.client.clone(),
+                        )
+                        .await
+                        {
+                            error!("{e}, {f}");
                         }
                     }
-                }
+                },
                 Err(e) => {
-                    error!("{e}");
+                    error!("cache: {e}");
                     if let Err(e) = get_new_mirrors(
                         cache_file,
                         Arc::clone(&self.app),
@@ -397,16 +397,12 @@ async fn get_new_mirrors(
     config: Arc<std::sync::Mutex<Configuration>>,
     client: Client,
 ) -> Result<()> {
-    let url = Arc::new(Mutex::new(String::default()));
-    let inner = Arc::clone(&url);
-    {
-        let mut val = inner.lock().await;
+    let url = {
         let source = config.lock().unwrap();
-        *val = source.url.clone();
+        source.url.clone()
     };
-    let strs = url.lock().await;
 
-    match archlinux::get_mirrors_with_client(&strs, client).await {
+    match archlinux::get_mirrors_with_client(&url, client).await {
         Ok((mirrors, str_value)) => {
             if let Some(cache) = cache_file {
                 if let Err(e) = tokio::fs::write(cache, str_value).await {
@@ -416,8 +412,7 @@ async fn get_new_mirrors(
 
             show_stats(&mirrors.countries, false);
 
-            let mut app = app.lock().await;
-            app.mirrors = Some(mirrors);
+            update_state(app, config, mirrors).await;
         }
         Err(e) => {
             warn!("{e}, using old cached file fallback");
@@ -426,7 +421,7 @@ async fn get_new_mirrors(
 
                 match slice.ok().and_then(|f| archlinux::parse_local(&f).ok()) {
                     Some(mirrors) => {
-                        update_state(app, Arc::clone(&config), mirrors).await;
+                        update_state(app, config, mirrors).await;
                     }
                     _ => {
                         bail!("{e}");
@@ -441,23 +436,31 @@ async fn get_new_mirrors(
 async fn update_state(
     app: Arc<Mutex<App>>,
     config: Arc<std::sync::Mutex<Configuration>>,
-    mut mirrors: ArchLinux,
+    mirrors: ArchLinux,
 ) {
     let mut app = app.lock().await;
-    let config = config.lock().unwrap();
-    if !config.country.is_empty() {
-        let items = mirrors
-            .countries
-            .into_iter()
-            .filter(|f| {
-                config
-                    .country
-                    .iter()
-                    .any(|a| a.eq_ignore_ascii_case(&f.name))
-            })
-            .collect_vec();
-        mirrors.countries = items;
-    }
+    app.selected_mirrors = mirrors
+        .countries
+        .iter()
+        .filter_map(|country| {
+            let mirrors = country
+                .mirrors
+                .iter()
+                .filter(|f| filter_result(f, Arc::clone(&config)));
+
+            let config = config.lock().unwrap();
+            match config
+                .country
+                .iter()
+                .any(|a| a.eq_ignore_ascii_case(&country.name))
+            {
+                true => Some(mirrors.map(|f| SelectedMirror::from((f, country.code.as_str())))),
+                false => None,
+            }
+        })
+        .flatten()
+        .collect_vec();
+
     app.mirrors = Some(mirrors);
 }
 
