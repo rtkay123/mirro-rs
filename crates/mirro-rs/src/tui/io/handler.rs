@@ -190,7 +190,7 @@ impl IoAsyncHandler {
             set.spawn(archlinux::rate_mirror(i.clone(), client.clone()));
         }
 
-        let popup_state = popup.map(|popup| Arc::clone(&popup));
+        let popup_state = popup.clone();
 
         tokio::spawn(async move {
             let mut current = 0;
