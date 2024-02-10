@@ -7,6 +7,18 @@
   "rebaseWhen": "conflicted",
   "packageRules": [
     {
+      "matchPackagePatterns": [
+        "clap"
+      ],
+      "groupName": "clap"
+    },
+    {
+      "matchPackagePatterns": [
+        "tracing"
+      ],
+      "groupName": "tracing"
+    },
+    {
       "matchUpdateTypes": [
         "minor",
         "patch"
