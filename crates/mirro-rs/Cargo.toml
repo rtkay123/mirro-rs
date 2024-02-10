@@ -49,5 +49,5 @@ toml = "0.8.8"
 [build-dependencies]
 clap = { version = "4.4.18", features = ["derive"] }
 clap_complete = "4.4.9"
-clap_mangen = "0.2.17"
+clap_mangen = "0.2.20"
 serde = { workspace = true, features = ["derive"] }

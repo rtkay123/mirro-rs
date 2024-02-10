@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        msrv: ["1.71.0"] # systemd-journal-logger
+        msrv: ["1.74.0"] # clap_mangen
     name: ubuntu / ${{ matrix.msrv }}
     steps:
       - uses: actions/checkout@v4
