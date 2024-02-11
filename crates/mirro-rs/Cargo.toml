@@ -28,9 +28,9 @@ serde_json = { workspace = true, optional = true }
 serde_yaml = { version = "0.9.31", optional = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "fs"] }
 toml = { version = "0.8.10", optional = true }
-tui-logger = { version = "0.10.1", features = ["crossterm", "tracing-support"], default-features = false }
+tui-logger = { version = "0.11.0", features = ["crossterm", "tracing-support"], default-features = false }
 unicode-width = "0.1.11"
-ratatui = { version = "0.25.0", features = ["crossterm"], default-features = false }
+ratatui = { version = "0.26.0", features = ["crossterm"], default-features = false }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
