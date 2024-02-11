@@ -2,7 +2,7 @@
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/rtkay123/mirro-rs/ci.yml?label=build">
   <img alt="Crates.io" src="https://img.shields.io/crates/l/mirro-rs">
   <img alt="Crates.io" src="https://img.shields.io/crates/v/mirro-rs">
-  <img alt="msrv" src="https://img.shields.io/badge/msrv-1.71.0-blue"/>
+  <img alt="msrv" src="https://img.shields.io/badge/msrv-1.74.0-blue"/>
 </div>
 <h3 align="center">mirro-rs</h3>
 <p align="center">
