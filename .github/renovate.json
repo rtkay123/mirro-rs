@@ -16,7 +16,27 @@
       "matchPackagePatterns": [
         "tracing"
       ],
-      "groupName": "tracing"
+      "groupName": "tracing",
+      "automerge": true
+    },
+    {
+      "groupName": "tokio",
+      "automerge": true,
+      "matchPackagePatterns": [
+        "tokio"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ]
+    },
+    {
+      "groupName": "tui",
+      "matchPackagePatterns": [
+        "ratatui",
+        "tui-logger"
+      ]
     },
     {
       "matchUpdateTypes": [
