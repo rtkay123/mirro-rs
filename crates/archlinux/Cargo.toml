@@ -11,10 +11,10 @@ homepage = "https://github.com/rtkay123/mirro-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = { version = "0.4.33", features = ["serde"], optional = true }
+chrono = { version = "0.4.34", features = ["serde"], optional = true }
 futures = "0.3.30"
 itertools.workspace = true
-log = "0.4.17"
+log = "0.4.20"
 reqwest = { version = "0.11.23", default-features = false, features = ["json", "rustls-tls"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
