@@ -14,7 +14,7 @@ documentation = "https://github.com/rtkay123/mirro-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ahash = "0.8.9" # https://github.com/tkaitchuck/aHash/issues/200
+ahash = "0.8.10" # https://github.com/tkaitchuck/aHash/issues/200
 anyhow = "1.0.80"
 cfg-if = { version = "1.0.0", optional = true }
 clap = { version = "4.5.1", features = ["derive"] }
