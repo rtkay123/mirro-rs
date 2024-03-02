@@ -20,6 +20,14 @@
       "automerge": true
     },
     {
+      "matchPackagePatterns": [
+        "anyhow",
+        "thiserror"
+      ],
+      "automerge": true,
+      "groupName": "error-handling"
+    },
+    {
       "groupName": "tokio",
       "automerge": true,
       "matchPackagePatterns": [
@@ -36,6 +44,18 @@
       "matchPackagePatterns": [
         "ratatui",
         "tui-logger"
+      ]
+    },
+    {
+      "groupName": "serde",
+      "automerge": true,
+      "matchPackagePatterns": [
+        "^serde"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
       ]
     },
     {
