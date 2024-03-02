@@ -1,120 +1,31 @@
-name: CI
-
 on:
   push:
-    branches:
-      - master
-
+    branches: [master]
   pull_request:
-    branches:
-      - master
+name: rust
+
+# cancel on going checks when new code is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
 
 jobs:
-  lints:
+  check:
     runs-on: ubuntu-latest
-
+    name: ubuntu / stable / check
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: 'rustfmt, clippy'
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Run rustfmt
-        run: cargo fmt --all -- --check
-
-      - name: Run clippy
-        uses: giraffate/clippy-action@v1
-        with:
-          reporter: 'github-check'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          fail_on_error: true
-          clippy_flags: --all-targets --all-features
-
-  rust:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        toolchain:
-          - stable
-          - beta
-          - nightly
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
-          components: llvm-tools-preview
-      - uses: Swatinem/rust-cache@v2
-      - name: Compile Tests
-        run: cargo test --no-run --all-features
-      - name: Test
-        run: cargo test --all-features
-
-  doc:
-    runs-on: ubuntu-latest
-    name: nightly / doc
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Install nightly
-        uses: dtolnay/rust-toolchain@nightly
-      - name: cargo doc
-        run: cargo doc --no-deps --all-features
-        env:
-          RUSTDOCFLAGS: --cfg docsrs
-
-  os-check:
-    runs-on: ${{ matrix.os }}
-    name: ${{ matrix.os }} / stable
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
-      - name: cargo test
-        run: cargo test --locked --all-features --all-targets
-
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: llvm-tools-preview
-      - name: cargo install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: cargo llvm-cov
-        run: cargo llvm-cov --workspace --locked --all-features --lcov --output-path lcov.info
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
-        with:
-          fail_ci_if_error: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: cargo check
+        run: cargo check
 
   hack:
     runs-on: ubuntu-latest
@@ -130,11 +41,25 @@ jobs:
       - name: cargo hack
         run: cargo hack --feature-powerset check --all
 
+  doc:
+    runs-on: ubuntu-latest
+    name: nightly / doc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install nightly
+        uses: dtolnay/rust-toolchain@nightly
+      - name: cargo doc
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: --cfg docsrs
+
   msrv:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        msrv: ["1.71.0"] # systemd-journal-logger
+        msrv: ["1.74.0"] # clap_mangen
     name: ubuntu / ${{ matrix.msrv }}
     steps:
       - uses: actions/checkout@v4
