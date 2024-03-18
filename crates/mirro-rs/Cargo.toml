@@ -27,7 +27,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
 serde_yaml = { version = "0.9.32", optional = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "fs"] }
-toml = { version = "0.8.10", optional = true }
+toml = { version = "0.8.12", optional = true }
 tui-logger = { version = "0.11.0", features = ["crossterm", "tracing-support"], default-features = false }
 unicode-width = "0.1.11"
 ratatui = { version = "0.26.1", features = ["crossterm"], default-features = false }
@@ -44,7 +44,7 @@ yaml = ["dep:serde_yaml", "dep:notify", "dep:cfg-if"]
 toml = ["dep:toml", "dep:notify", "dep:cfg-if"]
 
 [dev-dependencies]
-toml = "0.8.10"
+toml = "0.8.12"
 
 [build-dependencies]
 clap = { version = "4.5.3", features = ["derive"] }
