@@ -402,7 +402,7 @@ async fn get_new_mirrors(
     {
         let mut val = inner.lock().await;
         let source = config.lock().unwrap();
-        *val = source.url.clone();
+        val.clone_from(&source.url);
     };
     let strs = url.lock().await;
 

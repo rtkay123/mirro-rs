@@ -88,7 +88,7 @@ impl From<Root> for ArchLinux {
                 .iter()
                 .filter_map(|f| {
                     if f.country.eq_ignore_ascii_case(i) {
-                        code = f.country_code.clone();
+                        code.clone_from(&f.country_code);
                         Some(Mirror {
                             url: f.url.clone(),
                             protocol: f.protocol,
