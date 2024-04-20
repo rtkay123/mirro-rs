@@ -18,7 +18,7 @@ log = "0.4.21"
 reqwest = { version = "0.12.3", default-features = false, features = ["json", "rustls-tls"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
-thiserror = "1.0.58"
+thiserror = "1.0.59"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros"] }
