@@ -1,4 +1,4 @@
-FROM alpine:3.19.1
+FROM alpine:3.20.2
 
 ENV RUSTFLAGS="-C target-feature=-crt-static"
 
@@ -12,7 +12,7 @@ COPY . .
 
 RUN /root/.cargo/bin/cargo build --release --all-features
 
-FROM alpine:3.19.1
+FROM alpine:3.20.2
 
 RUN apk add --no-cache libgcc
 
