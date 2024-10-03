@@ -6,7 +6,7 @@ mod direct;
 mod test;
 mod tui;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{atomic::AtomicBool, Arc, Mutex};
 
 use tracing::error;
 
@@ -38,19 +38,28 @@ async fn main() {
 
     dbg::log(config.direct);
 
+    let mut export_ok = false;
     if config.direct {
-        if let Err(e) = direct::begin(config).await {
+        if let Err(ref e) = direct::begin(config).await {
             error!("{e}")
-        }
+        } else {
+            export_ok = true;
+        };
     } else {
         let config = Arc::new(Mutex::new(config));
 
         #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
         watch_config(file, Arc::clone(&config));
 
-        let _ = tui::start(config).await;
+        let list_exported = Arc::new(AtomicBool::new(export_ok));
+        if let Err(ref e) = tui::start(config, Arc::clone(&list_exported)).await {
+            error!("{e}");
+            export_ok = false;
+        } else {
+            export_ok = list_exported.load(std::sync::atomic::Ordering::Relaxed);
+        }
     }
-    std::process::exit(0);
+    std::process::exit(if export_ok { 0 } else { 1 });
 }
 
 pub fn exit(value: &str) -> ! {
