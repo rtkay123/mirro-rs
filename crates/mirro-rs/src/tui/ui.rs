@@ -35,7 +35,7 @@ pub fn ui(
 ) {
     const MIN_WIDTH: u16 = 80;
     const MIN_HEIGHT: u16 = 27;
-    let area = f.size();
+    let area = f.area();
     if check_size(&area, MIN_WIDTH, MIN_HEIGHT) {
         let region = Layout::default()
             .direction(Direction::Vertical)
@@ -115,12 +115,14 @@ pub fn ui(
             match app.show_input {
                 true => {
                     f.render_widget(draw_filter(app), chunks[1]);
-                    f.set_cursor(
+                    let position = (
                         // Put cursor past the end of the input text
                         chunks[1].x + app.input_cursor_position as u16 + 1,
                         // Move one line down, from the border to the input line
                         chunks[1].y + 1,
-                    )
+                    );
+
+                    f.set_cursor_position(position)
                 }
                 false => f.render_widget(draw_logs(), chunks[1]),
             };
