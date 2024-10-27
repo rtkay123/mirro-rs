@@ -190,7 +190,6 @@ impl From<(ArgConfig, ArgConfig)> for Configuration {
     }
 }
 
-#[cfg(any(test, not(any(feature = "json", feature = "toml", feature = "yaml"))))]
 impl From<ArgConfig> for Configuration {
     fn from(args: ArgConfig) -> Self {
         let outfile = args
