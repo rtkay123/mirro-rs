@@ -220,7 +220,6 @@ pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Du
 /// #  Ok(())
 /// # }
 /// ```
-
 #[cfg(feature = "time")]
 #[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 pub async fn get_last_sync(

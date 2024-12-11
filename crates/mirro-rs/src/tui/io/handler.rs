@@ -99,6 +99,7 @@ impl IoAsyncHandler {
         &self,
         in_progress: Arc<AtomicBool>,
         progress_transmitter: std::sync::mpsc::Sender<f32>,
+        list_exported: Arc<AtomicBool>,
     ) -> Result<()> {
         in_progress.store(true, std::sync::atomic::Ordering::Relaxed);
 
@@ -153,7 +154,7 @@ impl IoAsyncHandler {
                 Some(in_progress),
                 Some(Arc::clone(&self.popup)),
             )
-            .await;
+            .await?;
         } else {
             Self::rate_mirrors(
                 selected_mirrors,
@@ -166,6 +167,8 @@ impl IoAsyncHandler {
             )
             .await;
         }
+        // mirrorlist has been exported
+        list_exported.store(true, std::sync::atomic::Ordering::Relaxed);
 
         Ok(())
     }
@@ -178,7 +181,7 @@ impl IoAsyncHandler {
         export_count: usize,
         in_progress: Option<Arc<AtomicBool>>,
         client: Client,
-    ) -> tokio::task::JoinHandle<()> {
+    ) -> tokio::task::JoinHandle<Result<()>> {
         let mut mirrors = Vec::with_capacity(selected_mirrors.len());
 
         let mut set = tokio::task::JoinSet::new();
@@ -241,11 +244,12 @@ impl IoAsyncHandler {
                 }
             };
 
-            Self::write_to_file(outfile, &results, export_count, in_progress, popup_state).await;
+            Self::write_to_file(outfile, &results, export_count, in_progress, popup_state).await?;
 
             if let Some(progress) = progress_transmitter {
                 let _ = progress.send(0.0); // reset progress
             }
+            Ok(())
         })
     }
 
@@ -255,43 +259,45 @@ impl IoAsyncHandler {
         export_count: usize,
         in_progress: Option<Arc<AtomicBool>>,
         popup: Option<Arc<Mutex<PopUpState>>>,
-    ) {
+    ) -> Result<()> {
         if let Some(dir) = outfile.parent() {
             info!(count = %export_count, "making export of mirrors");
-            if tokio::fs::create_dir_all(dir).await.is_ok() {
-                let output = &selected_mirrors[if selected_mirrors.len() >= export_count {
-                    ..export_count
-                } else {
-                    ..selected_mirrors.len()
-                }];
-                let output: Vec<_> = output
-                    .iter()
-                    .map(|f| format!("Server = {f}$repo/os/$arch"))
-                    .collect();
+            tokio::fs::create_dir_all(dir).await?;
+            let output = &selected_mirrors[if selected_mirrors.len() >= export_count {
+                ..export_count
+            } else {
+                ..selected_mirrors.len()
+            }];
+            let output: Vec<_> = output
+                .iter()
+                .map(|f| format!("Server = {f}$repo/os/$arch"))
+                .collect();
 
-                if let Err(e) = tokio::fs::write(&outfile, output.join("\n")).await {
-                    error!("{e}");
-                } else {
-                    info!("Your mirrorlist has been exported");
-                }
-                if let Some(popup) = popup {
-                    let mut state = popup.lock().await;
-                    state.popup_text = format!(
-                        "Your mirrorlist has been successfully exported to: {}",
-                        outfile.display()
-                    );
-                }
+            if let Err(e) = tokio::fs::write(&outfile, output.join("\n")).await {
+                error!("{e}");
+                return Err(e.into());
+            } else {
+                info!("Your mirrorlist has been exported");
+            }
+            if let Some(popup) = popup {
+                let mut state = popup.lock().await;
+                state.popup_text = format!(
+                    "Your mirrorlist has been successfully exported to: {}",
+                    outfile.display()
+                );
             }
         }
         if let Some(in_progress) = in_progress {
             in_progress.store(false, std::sync::atomic::Ordering::Relaxed);
         }
+        Ok(())
     }
 
     pub async fn handle_io_event(
         &mut self,
         io_event: IoEvent,
         config: Arc<std::sync::Mutex<Configuration>>,
+        list_exported: Arc<AtomicBool>,
     ) {
         if let Err(e) = match io_event {
             IoEvent::Initialise => {
@@ -306,7 +312,10 @@ impl IoAsyncHandler {
             IoEvent::Export {
                 in_progress,
                 progress_transmitter,
-            } => self.export(in_progress, progress_transmitter).await,
+            } => {
+                self.export(in_progress, progress_transmitter, list_exported)
+                    .await
+            }
         } {
             error!("{e}");
         }
