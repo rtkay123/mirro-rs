@@ -47,6 +47,12 @@ pub struct PopUpState {
     pub visible: bool,
 }
 
+impl Default for PopUpState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PopUpState {
     pub fn new() -> Self {
         Self {
@@ -340,7 +346,7 @@ impl App {
 
                 let index = format!("  {idx}│");
 
-                return Row::new([index, item_name, count.to_string()].iter().map(|c| {
+                Row::new([index, item_name, count.to_string()].iter().map(|c| {
                     Cell::from(c.clone()).style(if selected {
                         Style::default()
                             .add_modifier(Modifier::BOLD)
@@ -348,7 +354,7 @@ impl App {
                     } else {
                         Style::default().fg(Color::Gray)
                     })
-                }));
+                }))
             })
             .collect_vec()
     }

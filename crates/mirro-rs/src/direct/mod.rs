@@ -24,7 +24,9 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
     let config = Arc::new(Mutex::new(configuration));
     let (is_fresh, cache_file) = io::handler::is_fresh(Arc::clone(&config)).await;
     let mirrorlist = if is_fresh {
-        match tokio::fs::read_to_string(cache_file.as_ref().unwrap()).await {
+        match tokio::fs::read_to_string(cache_file.as_ref().expect("cache file to be available"))
+            .await
+        {
             Ok(contents) => {
                 let result = archlinux::parse_local(&contents);
                 match result {
@@ -79,7 +81,7 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
     let client = get_client(connection_timeout)?;
 
     if rate {
-        if let Err(e) = IoAsyncHandler::rate_mirrors(
+        IoAsyncHandler::rate_mirrors(
             results,
             None,
             None,
@@ -89,12 +91,9 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
             client,
         )
         .await
-        .await
-        {
-            error!("{e}");
-        }
+        .await??;
     } else {
-        IoAsyncHandler::write_to_file(outfile, &results, export_count as usize, None, None).await;
+        IoAsyncHandler::write_to_file(outfile, &results, export_count as usize, None, None).await?;
     }
 
     Ok(())

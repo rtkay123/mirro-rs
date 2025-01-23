@@ -31,7 +31,10 @@ use self::{
     ui::ui,
 };
 
-pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
+pub async fn start(
+    configuration: Arc<std::sync::Mutex<Configuration>>,
+    list_exported: Arc<AtomicBool>,
+) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
 
@@ -56,13 +59,15 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
             let mut handler = IoAsyncHandler::new(inner, popup_state, client);
             debug!("Getting Arch Linux mirrors. Please wait");
             while let Some(io_event) = sync_io_rx.recv().await {
+                let export_state = Arc::clone(&list_exported);
                 handler
-                    .handle_io_event(io_event, Arc::clone(&configuration))
+                    .handle_io_event(io_event, Arc::clone(&configuration), export_state)
                     .await;
             }
         });
     }
-    let res = run_app(&mut terminal, Arc::clone(&app), popup_state).await;
+
+    run_app(&mut terminal, Arc::clone(&app), popup_state).await?;
 
     disable_raw_mode()?;
     execute!(
@@ -71,10 +76,6 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
         DisableMouseCapture
     )?;
     terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        eprintln!("{err:?}")
-    }
 
     Ok(())
 }
