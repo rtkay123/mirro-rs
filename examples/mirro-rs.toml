@@ -7,6 +7,8 @@ sort = "score" # percentage, duration, delay, score
 cache-ttl = 24
 url = "https://archlinux.org/mirrors/status/json/"
 rate-speed = true
+# Maximum number of mirrors to rate concurrently
+max-concurrent-ratings = 4
 timeout = 5
 #include = [
 #  "https://cloudflaremirrors.com/archlinux/"
