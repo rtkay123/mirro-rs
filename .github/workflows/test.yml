@@ -41,7 +41,7 @@ jobs:
       - name: cargo test --locked
         run: cargo nextest run --locked --all-features --all-targets
       - name: cargo test --doc
-        run: cargo nextest run --locked --all-features --doc
+        run: cargo test --locked --all-features --doc
 
   os-check:
     runs-on: ${{ matrix.os }}
@@ -88,7 +88,6 @@ jobs:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: ${{ github.repository }}
-          flags: backend
       - uses: codecov/codecov-action@v5
         if: ${{ !cancelled() }}
         with:
