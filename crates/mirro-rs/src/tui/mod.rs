@@ -11,22 +11,22 @@ use archlinux::get_client;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use std::{
-    sync::{atomic::AtomicBool, Arc},
+    sync::{Arc, atomic::AtomicBool},
     time::Duration,
 };
 use tokio::sync::Mutex;
 use tracing::debug;
 
-use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui::{Terminal, backend::CrosstermBackend};
 
 use crate::config::Configuration;
 
 use self::{
-    inputs::{event::Events, InputEvent},
-    io::{handler::IoAsyncHandler, IoEvent},
+    inputs::{InputEvent, event::Events},
+    io::{IoEvent, handler::IoAsyncHandler},
     state::{App, AppReturn, PopUpState},
     ui::ui,
 };
@@ -104,23 +104,35 @@ async fn run_app(
 
     let exporting = Arc::new(AtomicBool::new(false));
     let (pos_tx, pos_rx) = std::sync::mpsc::channel();
+    let mut export_progress = 0.0;
 
     loop {
-        let mut app = app.lock().await;
-        let popup = popup_state.lock().await;
-
-        terminal.draw(|f| ui(f, &mut app, &popup, Arc::clone(&exporting), &pos_rx))?;
+        {
+            let mut app = app.lock().await;
+            let popup = popup_state.lock().await;
+            terminal.draw(|f| {
+                ui(
+                    f,
+                    &mut app,
+                    &popup,
+                    Arc::clone(&exporting),
+                    &pos_rx,
+                    &mut export_progress,
+                )
+            })?;
+        }
 
         let result = match events.next().await {
             InputEvent::Input(key) => {
-                app.dispatch_action(key, Arc::clone(&exporting), pos_tx.clone())
+                let mut app = app.lock().await;
+                let popup_visible = popup_state.lock().await.visible;
+                app.dispatch_action(key, Arc::clone(&exporting), pos_tx.clone(), popup_visible)
                     .await
             }
-            InputEvent::Tick => app.update_on_tick().await,
+            InputEvent::Tick => app.lock().await.update_on_tick().await,
         };
 
         if result == AppReturn::Exit {
-            events.close();
             break;
         }
     }

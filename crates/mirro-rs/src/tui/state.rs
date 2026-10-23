@@ -1,8 +1,5 @@
-use archlinux::{
-    chrono::{DateTime, Utc},
-    ArchLinux, Country,
-};
-use std::sync::{atomic::AtomicBool, mpsc::Sender, Arc, Mutex};
+use archlinux::{ArchLinux, Country};
+use std::sync::{Arc, Mutex, atomic::AtomicBool, mpsc::Sender};
 
 use crate::{
     cli::{Protocol, ViewSort},
@@ -64,7 +61,6 @@ pub struct SelectedMirror {
     pub delay: Option<i64>,
     pub score: Option<f64>,
     pub duration_stddev: Option<f64>,
-    pub last_sync: Option<DateTime<Utc>>,
     pub url: String,
 }
 
@@ -97,7 +93,13 @@ impl App {
         key: Key,
         exporting: Arc<AtomicBool>,
         progress_transmitter: Sender<f32>,
+        popup_visible: bool,
     ) -> AppReturn {
+        if popup_visible && self.actions.find(key) == Some(&Action::ClosePopUp) {
+            let _ = self.io_tx.send(IoEvent::ClosePopUp).await;
+            return AppReturn::Continue;
+        }
+
         if let Some(action) = self.actions.find(key) {
             if key.is_exit() && !self.show_input {
                 AppReturn::Exit
@@ -314,7 +316,7 @@ impl App {
         iter.chunks(self.table_viewport_height.into()).collect_vec()
     }
 
-    pub fn rows(&self) -> Vec<Row> {
+    pub fn rows(&self) -> Vec<Row<'_>> {
         self.filtered_countries
             .iter()
             .enumerate()
@@ -340,7 +342,7 @@ impl App {
 
                 let index = format!("  {idx}│");
 
-                return Row::new([index, item_name, count.to_string()].iter().map(|c| {
+                Row::new([index, item_name, count.to_string()].iter().map(|c| {
                     Cell::from(c.clone()).style(if selected {
                         Style::default()
                             .add_modifier(Modifier::BOLD)
@@ -348,7 +350,7 @@ impl App {
                     } else {
                         Style::default().fg(Color::Gray)
                     })
-                }));
+                }))
             })
             .collect_vec()
     }
@@ -387,7 +389,6 @@ impl App {
                     delay: f.delay,
                     score: f.score,
                     duration_stddev: f.duration_stddev,
-                    last_sync: f.last_sync,
                     url: f.url.to_string(),
                 })
                 .collect_vec();
