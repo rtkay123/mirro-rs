@@ -35,12 +35,6 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
 
-    let client = {
-        let timeout = configuration.lock().unwrap();
-        let timeout = timeout.connection_timeout;
-        get_client(timeout)?
-    };
-
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
 
     let backend = CrosstermBackend::new(stdout);
@@ -52,7 +46,21 @@ pub async fn start(configuration: Arc<std::sync::Mutex<Configuration>>) -> Resul
     let popup_state = Arc::new(Mutex::new(PopUpState::new()));
     {
         let popup_state = Arc::clone(&popup_state);
+        let timeout = configuration.lock().unwrap().connection_timeout;
         tokio::spawn(async move {
+            let client = match tokio::task::spawn_blocking(move || get_client(timeout)).await {
+                Ok(Ok(client)) => client,
+                Ok(Err(e)) => {
+                    debug!("Could not initialize HTTP client: {e}");
+                    popup_state.lock().await.visible = false;
+                    return;
+                }
+                Err(e) => {
+                    debug!("HTTP client initialization task failed: {e}");
+                    popup_state.lock().await.visible = false;
+                    return;
+                }
+            };
             let mut handler = IoAsyncHandler::new(inner, popup_state, client);
             debug!("Getting Arch Linux mirrors. Please wait");
             while let Some(io_event) = sync_io_rx.recv().await {
