@@ -108,10 +108,19 @@ impl IoAsyncHandler {
         popup_state.visible = true;
         std::mem::drop(popup_state);
 
-        let (check_dl_speed, outfile, export_count, mut selected_mirrors, extra_urls, age) = {
+        let (
+            check_dl_speed,
+            max_concurrent_ratings,
+            outfile,
+            export_count,
+            mut selected_mirrors,
+            extra_urls,
+            age,
+        ) = {
             let app_state = self.app.lock().await;
             let configuration = app_state.configuration.lock().unwrap();
             let check_dl_speed = configuration.rate;
+            let max_concurrent_ratings = configuration.max_concurrent_ratings;
             let outfile = configuration.outfile.clone();
             let export_count = configuration.export as usize;
             let include = configuration.include.clone();
@@ -124,6 +133,7 @@ impl IoAsyncHandler {
                 .collect_vec();
             (
                 check_dl_speed,
+                max_concurrent_ratings,
                 outfile,
                 export_count,
                 selected_mirrors,
@@ -164,6 +174,7 @@ impl IoAsyncHandler {
                 export_count,
                 Some(in_progress),
                 self.client.clone(),
+                max_concurrent_ratings,
             )
             .await;
         }
@@ -179,20 +190,23 @@ impl IoAsyncHandler {
         export_count: usize,
         in_progress: Option<Arc<AtomicBool>>,
         client: Client,
+        max_concurrent_ratings: usize,
     ) -> tokio::task::JoinHandle<()> {
         let mut mirrors = Vec::with_capacity(selected_mirrors.len());
 
         let mut set = tokio::task::JoinSet::new();
-
-        for i in selected_mirrors.iter() {
-            set.spawn(archlinux::rate_mirror(i.clone(), client.clone()));
-        }
-
+        let len = selected_mirrors.len();
+        let fallback_urls = selected_mirrors.clone();
         let popup_state = popup.clone();
 
         tokio::spawn(async move {
             let mut current = 0;
-            let len = set.len();
+            let mut urls = selected_mirrors.into_iter();
+            for _ in 0..max_concurrent_ratings.max(1) {
+                if let Some(url) = urls.next() {
+                    set.spawn(archlinux::rate_mirror(url, client.clone()));
+                }
+            }
 
             while let Some(res) = set.join_next().await {
                 match res {
@@ -229,6 +243,10 @@ impl IoAsyncHandler {
                     let value = (current as f32) / (len as f32) * 100.0;
                     let _ = progress_transmitter.send(value);
                 }
+
+                if let Some(url) = urls.next() {
+                    set.spawn(archlinux::rate_mirror(url, client.clone()));
+                }
             }
 
             let results = {
@@ -238,7 +256,7 @@ impl IoAsyncHandler {
                     mirrors.iter().map(|(_, url)| url.to_owned()).collect_vec()
                 } else {
                     warn!("Exporting mirrors without rating...");
-                    selected_mirrors.to_vec()
+                    fallback_urls
                 }
             };
 
