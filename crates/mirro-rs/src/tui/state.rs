@@ -50,7 +50,7 @@ pub struct PopUpState {
 impl PopUpState {
     pub fn new() -> Self {
         Self {
-            popup_text: String::from("Getting mirrors... please wait..."),
+            popup_text: String::from("Fetching the initial mirror list... please wait..."),
             visible: true,
         }
     }
