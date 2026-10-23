@@ -18,7 +18,7 @@ async fn main() {
     let args = <cli::ArgConfig as clap::Parser>::parse();
 
     #[cfg(feature = "toml")]
-    let config = {
+    let (config, config_file) = {
         let (config, file) = config::read_config_file(args.general.config.as_ref());
 
         if !check_outfile(&args.general) && !check_outfile(&config.general) {
@@ -29,7 +29,7 @@ async fn main() {
             exit("outfile");
         }
 
-        config::Configuration::from((args, config))
+        (config::Configuration::from((args, config)), file)
     };
 
     #[cfg(not(feature = "toml"))]
@@ -45,7 +45,7 @@ async fn main() {
         let config = Arc::new(Mutex::new(config));
 
         #[cfg(feature = "toml")]
-        watch_config(file, Arc::clone(&config));
+        watch_config(config_file, Arc::clone(&config));
 
         let _ = tui::start(config).await;
     }

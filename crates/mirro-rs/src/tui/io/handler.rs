@@ -36,7 +36,8 @@ impl IoAsyncHandler {
     }
 
     pub async fn initialise(&mut self, config: Arc<std::sync::Mutex<Configuration>>) -> Result<()> {
-        let (is_fresh, cache_file) = is_fresh(Arc::clone(&config)).await;
+        let ttl = config.lock().unwrap().ttl;
+        let (is_fresh, cache_file) = is_fresh(ttl).await;
         if is_fresh {
             match tokio::fs::read_to_string(cache_file.as_ref().unwrap()).await {
                 Ok(contents) => {
@@ -351,9 +352,7 @@ async fn check_extra_urls(
 }
 
 // Do we get a new mirrorlist or nah
-pub async fn is_fresh(
-    app: Arc<std::sync::Mutex<Configuration>>,
-) -> (bool, Option<std::path::PathBuf>) {
+pub async fn is_fresh(ttl: u16) -> (bool, Option<std::path::PathBuf>) {
     if let Some(mut cache) = dirs::cache_dir() {
         let crate_name = env!("CARGO_PKG_NAME");
         cache.push(crate_name);
@@ -362,10 +361,6 @@ pub async fn is_fresh(
         }
         cache.push(CACHE_FILE);
         if cache.exists() {
-            let config = app.lock().unwrap();
-            let expires = config.ttl;
-            drop(config);
-
             let duration = cache.metadata().map(|f| {
                 f.modified().map(|f| {
                     let now = SystemTime::now();
@@ -375,7 +370,7 @@ pub async fn is_fresh(
             match duration {
                 Ok(Ok(Ok(duration))) => {
                     let hours = duration.as_secs() / 3600;
-                    if hours < expires as u64 {
+                    if hours < ttl as u64 {
                         (true, Some(cache))
                     } else {
                         (false, Some(cache))
