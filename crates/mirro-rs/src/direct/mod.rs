@@ -17,6 +17,7 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
     let included = configuration.include.clone();
     let connection_timeout = configuration.connection_timeout;
     let rate = configuration.rate;
+    let max_concurrent_ratings = configuration.max_concurrent_ratings;
     let outfile = configuration.outfile.clone();
     let export_count = configuration.export;
 
@@ -86,6 +87,7 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
             export_count.into(),
             None,
             client,
+            max_concurrent_ratings,
         )
         .await
         .await
