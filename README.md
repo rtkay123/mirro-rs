@@ -26,8 +26,8 @@ A mirrorlist manager for Arch Linux systems
   - Completion - The number of mirror checks (as a percentage) that have successfully connected and disconnected from the given URL. If this is below 100%, the mirror may be unreliable.
   - Score - It is currently calculated as (hours delay + average duration + standard deviation) / completion percentage. _Lower is better_.
   - Standard deviation - The standard deviation of the connect and retrieval time. A high standard deviation can indicate an unstable or overloaded mirror.
-  - Delay - The mean value of last check − last sync for each check of this mirror URL. Due to the timing of mirror checks, any value under one hour should be viewed as ideal.
-  - Rate - sort by download speed
+  - Delay - The mean synchronisation delay reported by Mirror Status. Values are measured in seconds; under 3600 seconds is generally ideal.
+  - Rate - download the mirror test file and sort by measured throughput
 - Filtering
   - Age
   - Country
@@ -102,6 +102,14 @@ mirro-rs --export 50 --protocols https --protocols http --age 24 --outfile "/hom
 #### Configuration
 
 For convenience, mirro-rs optionally supports reading a configuration `[default: $XDG_CONFIG_HOME/mirro-rs/mirro-rs.toml]` for general preferences. If none is available, `[default: $XDG_CONFIG_HOME/mirro-rs.toml]` will be used. If both are available, the former takes priority.
+
+Generate a default configuration file with:
+
+```sh
+mirro-rs generate-config
+```
+
+By default this writes `$XDG_CONFIG_HOME/mirro-rs/mirro-rs.toml` (or the platform config directory). Pass `--output PATH` to choose another destination. Existing files are not overwritten.
 
 For `toml` support:
 
