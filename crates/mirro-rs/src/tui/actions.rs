@@ -58,7 +58,7 @@ impl Action {
     pub fn keys(&self) -> &[Key] {
         match self {
             Action::Quit => &[Key::Ctrl('c'), Key::Char('q')],
-            Action::ClosePopUp => &[Key::Ctrl('p')],
+            Action::ClosePopUp => &[Key::Ctrl('p'), Key::Enter, Key::Esc],
             Action::ShowInput => &[Key::Ctrl('i'), Key::Char('/')],
             Action::NavigateUp => &[Key::Char('k'), Key::Up],
             Action::NavigateDown => &[Key::Char('j'), Key::Down],

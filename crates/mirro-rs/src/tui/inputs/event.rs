@@ -1,68 +1,50 @@
-use std::{
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    time::Duration,
-};
+use std::time::Duration;
 
-use tracing::error;
+use crossterm::event::{Event, EventStream, KeyEventKind};
+use futures_util::StreamExt;
+use tokio::time::{Interval, MissedTickBehavior, interval};
+use tracing::{error, warn};
 
-use super::key::Key;
 use super::InputEvent;
+use super::key::Key;
 
-/// A small event handler that wrap crossterm input and tick event. Each event
-/// type is handled in its own thread and returned to a common `Receiver`
+/// Combines asynchronous terminal input with periodic UI refresh ticks.
 pub struct Events {
-    rx: tokio::sync::mpsc::Receiver<InputEvent>,
-    // Need to be kept around to prevent disposing the sender side.
-    _tx: tokio::sync::mpsc::Sender<InputEvent>,
-    // To stop the loop
-    stop_capture: Arc<AtomicBool>,
+    stream: EventStream,
+    tick: Interval,
 }
 
 impl Events {
-    /// Constructs an new instance of `Events` with the default config.
+    /// Construct an event source with the given UI refresh interval.
     pub fn new(tick_rate: Duration) -> Events {
-        let (tx, rx) = tokio::sync::mpsc::channel(100);
-        let stop_capture = Arc::new(AtomicBool::new(false));
-
-        let event_tx = tx.clone();
-        let event_stop_capture = stop_capture.clone();
-        tokio::spawn(async move {
-            loop {
-                // poll for tick rate duration, if no event, sent tick event.
-                if crossterm::event::poll(tick_rate).unwrap() {
-                    if let crossterm::event::Event::Key(key) = crossterm::event::read().unwrap() {
-                        let key = Key::from(key);
-                        if let Err(err) = event_tx.send(InputEvent::Input(key)).await {
-                            error!("{err}");
-                        }
-                    }
-                }
-                if let Err(err) = event_tx.send(InputEvent::Tick).await {
-                    error!("{err}");
-                }
-                if event_stop_capture.load(Ordering::Relaxed) {
-                    break;
-                }
-            }
-        });
-
+        let mut tick = interval(tick_rate);
+        tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
         Events {
-            rx,
-            _tx: tx,
-            stop_capture,
+            stream: EventStream::new(),
+            tick,
         }
     }
 
-    /// Attempts to read an event.
+    /// Wait for the next keypress or periodic UI refresh.
     pub async fn next(&mut self) -> InputEvent {
-        self.rx.recv().await.unwrap_or(InputEvent::Tick)
-    }
-
-    /// Close
-    pub fn close(&mut self) {
-        self.stop_capture.store(true, Ordering::Relaxed)
+        loop {
+            tokio::select! {
+                event = self.stream.next() => match event {
+                    Some(Ok(Event::Key(key))) if key.kind != KeyEventKind::Release => {
+                        return InputEvent::Input(Key::from(key));
+                    }
+                    Some(Ok(_)) => continue,
+                    Some(Err(error)) => {
+                        error!("terminal input error: {error}");
+                        return InputEvent::Tick;
+                    }
+                    None => {
+                        warn!("terminal input stream closed");
+                        return InputEvent::Tick;
+                    }
+                },
+                _ = self.tick.tick() => return InputEvent::Tick,
+            }
+        }
     }
 }
