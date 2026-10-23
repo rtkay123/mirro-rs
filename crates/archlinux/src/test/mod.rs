@@ -2,7 +2,7 @@ use reqwest::{Response, StatusCode};
 
 use super::Result;
 
-use crate::{get_client, response::external::Root};
+use crate::{RawMirrorList, get_client};
 
 const ARCHLINUX_MIRRORS: &str = "https://archlinux.org/mirrors/status/json/";
 const LOCAL_SOURCE: &str = include_str!("../../sample/archlinux.json");
@@ -26,7 +26,7 @@ async fn arch_mirrors_ok() -> Result<()> {
 async fn archlinux_parse_body_remote() -> Result<()> {
     assert!(response().await.is_ok());
 
-    let root = response().await?.json::<Root>().await;
+    let root = response().await?.json::<RawMirrorList>().await;
 
     assert!(root.is_ok());
 
@@ -35,7 +35,7 @@ async fn archlinux_parse_body_remote() -> Result<()> {
 
 #[tokio::test]
 async fn archlinux_parse_body_local() -> Result<()> {
-    assert!(serde_json::from_str::<Root>(LOCAL_SOURCE).is_ok());
+    assert!(serde_json::from_str::<RawMirrorList>(LOCAL_SOURCE).is_ok());
     Ok(())
 }
 
@@ -62,6 +62,31 @@ async fn check_local_parse() -> Result<()> {
 
     let mirrors = crate::parse_local(json);
     assert!(mirrors.is_ok());
+    Ok(())
+}
+
+#[test]
+fn active_during_conversion() -> Result<()> {
+    let raw = crate::parse_raw(LOCAL_SOURCE)?;
+    let active_by_url: std::collections::HashMap<_, _> = raw
+        .urls
+        .iter()
+        .map(|mirror| (mirror.url.clone(), mirror.active))
+        .collect();
+    let mirrors = crate::ArchLinux::from(raw);
+
+    for mirror in mirrors
+        .countries
+        .iter()
+        .flat_map(|country| &country.mirrors)
+    {
+        assert_eq!(
+            mirror.active, active_by_url[&mirror.url],
+            "active status changed for {}",
+            mirror.url
+        );
+    }
+
     Ok(())
 }
 
