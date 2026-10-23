@@ -4,8 +4,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use figment::{
+    Figment,
+    providers::{Format, Serialized, Toml},
+};
 use tracing::error;
-use figment::{Figment, providers::{Format, Serialized, Toml}};
 
 use crate::cli::{ArgConfig, Args, Filters};
 
@@ -116,18 +119,13 @@ mod tests {
         let serialized = toml::to_string_pretty(&ArgConfig::default()).unwrap();
         let parsed: ArgConfig = toml::from_str(&serialized).unwrap();
 
-        assert_eq!(
-            toml::to_string_pretty(&parsed).unwrap(),
-            serialized,
-        );
+        assert_eq!(toml::to_string_pretty(&parsed).unwrap(), serialized,);
     }
 
     #[test]
     fn cli_values_override_file_and_file_false_values_override_defaults() {
-        let path = std::env::temp_dir().join(format!(
-            "mirro-rs-figment-test-{}.toml",
-            std::process::id()
-        ));
+        let path =
+            std::env::temp_dir().join(format!("mirro-rs-figment-test-{}.toml", std::process::id()));
         std::fs::write(
             &path,
             "[general]\nrate-speed = false\nexport = 21\n[filters]\nipv4 = false\n",
