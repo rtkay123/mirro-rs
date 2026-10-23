@@ -34,6 +34,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+      security-events: write # to upload sarif results
     strategy:
       fail-fast: false
       matrix:
