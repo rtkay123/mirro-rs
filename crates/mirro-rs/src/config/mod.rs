@@ -8,9 +8,9 @@ mod watch;
 pub use watch::watch_config;
 
 #[cfg(feature = "toml")]
-pub use file::{empty_cli_config, read_config_file};
-#[cfg(feature = "toml")]
 pub use file::generate_config_file;
+#[cfg(feature = "toml")]
+pub use file::{empty_cli_config, read_config_file};
 
 use std::path::PathBuf;
 

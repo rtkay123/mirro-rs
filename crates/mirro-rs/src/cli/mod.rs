@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use clap::{Parser, ValueEnum};
 #[cfg(feature = "toml")]
 use clap::Subcommand;
+use clap::{Parser, ValueEnum};
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_MIRROR_COUNT: u16 = 50;
