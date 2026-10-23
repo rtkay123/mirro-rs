@@ -18,18 +18,27 @@ async fn main() {
     let args = <cli::ArgConfig as clap::Parser>::parse();
 
     #[cfg(feature = "toml")]
+    if let Some(cli::Commands::GenerateConfig { output }) = args.command.as_ref() {
+        match config::generate_config_file(output.clone()) {
+            Ok(path) => println!("Configuration written to {}", path.display()),
+            Err(error) => {
+                error!("could not generate config file: {error}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+
+    #[cfg(feature = "toml")]
     let (config, config_file) = {
-        let (config, file) = config::read_config_file(args.general.config.as_ref());
+        let config_path = args.general.config.clone();
+        let (config, file) = config::read_config_file(config_path.as_ref(), Some(args));
 
-        if !check_outfile(&args.general) && !check_outfile(&config.general) {
+        if !check_outfile(&config.general) {
             exit("outfile");
         }
 
-        if !check_outfile(&args.general) {
-            exit("outfile");
-        }
-
-        (config::Configuration::from((args, config)), file)
+        (config::Configuration::from(config), file)
     };
 
     #[cfg(not(feature = "toml"))]
