@@ -1,7 +1,6 @@
-use std::sync::{Arc, Mutex};
-
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use archlinux::{
+    ArchLinux, Mirror,
     chrono::{DateTime, Local},
     get_client, ArchLinux, Mirror,
 };
@@ -21,8 +20,7 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
     let outfile = configuration.outfile.clone();
     let export_count = configuration.export;
 
-    let config = Arc::new(Mutex::new(configuration));
-    let (is_fresh, cache_file) = io::handler::is_fresh(Arc::clone(&config)).await;
+    let (is_fresh, cache_file) = io::handler::is_fresh(configuration.ttl).await;
     let mirrorlist = if is_fresh {
         match tokio::fs::read_to_string(cache_file.as_ref().unwrap()).await {
             Ok(contents) => {
@@ -31,17 +29,17 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
                     Ok(mirrors) => mirrors,
                     Err(e) => {
                         error!("{e}");
-                        get_new_mirrors(Arc::clone(&config), cache_file.as_ref()).await?
+                        get_new_mirrors(&configuration, cache_file.as_deref()).await?
                     }
                 }
             }
             Err(e) => {
                 error!("{e}");
-                get_new_mirrors(Arc::clone(&config), cache_file.as_ref()).await?
+                get_new_mirrors(&configuration, cache_file.as_deref()).await?
             }
         }
     } else {
-        get_new_mirrors(Arc::clone(&config), cache_file.as_ref()).await?
+        get_new_mirrors(&configuration, cache_file.as_deref()).await?
     };
 
     let mut results = mirrorlist
@@ -51,14 +49,15 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
             let results = f
                 .mirrors
                 .iter()
-                .filter(|f| filter_result(f, Arc::clone(&config)))
+                .filter(|f| filter_result(f, &configuration))
                 .filter(|_| {
-                    let conf = config.lock().unwrap();
-
-                    if conf.country.is_empty() {
+                    if configuration.country.is_empty() {
                         true
                     } else {
-                        conf.country.iter().any(|b| b.eq_ignore_ascii_case(&f.name))
+                        configuration
+                            .country
+                            .iter()
+                            .any(|country| country.eq_ignore_ascii_case(&f.name))
                     }
                 })
                 .collect_vec();
@@ -101,20 +100,15 @@ pub async fn begin(configuration: Configuration) -> Result<()> {
 }
 
 async fn get_new_mirrors(
-    config: Arc<Mutex<Configuration>>,
-    cache_file: Option<&std::path::PathBuf>,
+    config: &Configuration,
+    cache_file: Option<&std::path::Path>,
 ) -> Result<ArchLinux> {
-    let (url, timeout) = {
-        let config = config.lock().unwrap();
-        (config.url.clone(), config.connection_timeout)
-    };
-
-    match archlinux::get_mirrors_with_raw(&url, timeout).await {
+    match archlinux::get_mirrors_with_raw(&config.url, config.connection_timeout).await {
         Ok((resp, str_value)) => {
-            if let Some(cache) = cache_file {
-                if let Err(e) = tokio::fs::write(cache, str_value).await {
+            if let Some(cache) = cache_file
+                && let Err(e) = tokio::fs::write(cache, str_value).await
+            {
                     error!("{e}");
-                }
             }
             Ok(resp)
         }
@@ -133,27 +127,15 @@ async fn get_new_mirrors(
     }
 }
 
-pub fn filter_result(f: &Mirror, configuration: Arc<Mutex<Configuration>>) -> bool {
-    let mut config = configuration.lock().unwrap();
+pub fn filter_result(f: &Mirror, config: &Configuration) -> bool {
+    if !f.active {
+        return false;
+    }
 
-    let res = |config: &Configuration, f: &Mirror| {
-        let mut completion_ok = config.completion_percent as f32 <= f.completion_pct * 100.0;
-        let v4_on = config.filters.contains(&Protocol::Ipv4);
-        let isos_on = config.filters.contains(&Protocol::Isos);
-        let v6_on = config.filters.contains(&Protocol::Ipv6);
-        if v4_on {
-            completion_ok = completion_ok && f.ipv4;
-        }
-
-        if isos_on {
-            completion_ok = completion_ok && f.isos;
-        }
-
-        if v6_on {
-            completion_ok = completion_ok && f.ipv6;
-        }
-        completion_ok
-    };
+    let completion_ok = config.completion_percent as f32 <= f.completion_pct * 100.0
+        && (!config.filters.contains(&Protocol::Ipv4) || f.ipv4)
+        && (!config.filters.contains(&Protocol::Isos) || f.isos)
+        && (!config.filters.contains(&Protocol::Ipv6) || f.ipv6);
 
     if config.age != 0 {
         if let Some(mirror_sync) = f.last_sync {
