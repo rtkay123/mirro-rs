@@ -12,15 +12,19 @@ repository.workspace = true
 [dependencies]
 chrono = { version = "0.4.38", features = ["serde"], optional = true }
 futures = "0.3.30"
-itertools.workspace = true
 log = "0.4.21"
-reqwest = { version = "0.12.4", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12.4", default-features = false, features = ["json", "rustls-tls", "stream"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 thiserror = "1.0.59"
 
 [dev-dependencies]
+criterion = "0.5.1"
 tokio = { workspace = true, features = ["macros"] }
+
+[[bench]]
+name = "pipeline"
+harness = false
 
 [features]
 default = []
