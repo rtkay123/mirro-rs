@@ -19,7 +19,7 @@ serde_json.workspace = true
 thiserror = "2.0.21"
 
 [dev-dependencies]
-criterion = "0.5.1"
+criterion = "0.8.0"
 tokio = { workspace = true, features = ["macros"] }
 
 [[bench]]
