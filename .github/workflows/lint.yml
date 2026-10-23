@@ -47,9 +47,23 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           components: clippy
-      - name: cargo clippy
-        uses: giraffate/clippy-action@v1
+      - uses: Swatinem/rust-cache@v2
+      - name: Install dependencies
+        uses: taiki-e/install-action@v2
         with:
-          reporter: 'github-pr-check'
-          fail_on_error: true
-          clippy_flags: --all-targets --all-features
+          tool: |
+            clippy-sarif
+            sarif-fmt
+      - name: Run rust-clippy
+        run:
+          cargo clippy
+          --workspace
+          --all-features
+          --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+        continue-on-error: true
+      - name: Upload analysis results to GitHub
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: rust-clippy-results.sarif
+          category: clippy
+          wait-for-processing: true
