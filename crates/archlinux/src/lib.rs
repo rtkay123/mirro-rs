@@ -8,11 +8,9 @@
 //! # mirrors-arch
 use std::time::{Duration, Instant};
 
-use futures::{future::BoxFuture, FutureExt};
+use futures::{FutureExt, future::BoxFuture};
 use log::{info, trace};
-use reqwest::{header::LOCATION, ClientBuilder, Response, StatusCode};
-
-use crate::response::external::Root;
+use reqwest::{ClientBuilder, Response, StatusCode, header::LOCATION};
 
 #[cfg(test)]
 mod test;
@@ -28,7 +26,10 @@ mod response;
 #[doc(no_inline)]
 pub use chrono;
 
-pub use response::{external::Protocol, internal::*};
+pub use response::{
+    external::{Protocol, RawMirror, RawMirrorList},
+    internal::*,
+};
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -54,7 +55,7 @@ pub(crate) const FILE_PATH: &str = "core/os/x86_64/core.db.tar.gz";
 pub async fn get_mirrors(source: &str, with_timeout: Option<u64>) -> Result<ArchLinux> {
     let response = get_response(source, with_timeout).await?;
 
-    let root: Root = response.json().await?;
+    let root: RawMirrorList = response.json().await?;
 
     let body = ArchLinux::from(root);
     let count = body.countries.len();
@@ -95,7 +96,7 @@ pub async fn get_mirrors_with_raw(
 }
 
 async fn deserialise_mirrors(response: Response) -> Result<(ArchLinux, String)> {
-    let root: Root = response.json().await?;
+    let root: RawMirrorList = response.json().await?;
 
     let value = serde_json::to_string(&root)?;
     Ok((ArchLinux::from(root), value))
@@ -125,8 +126,12 @@ pub async fn get_mirrors_with_client(source: &str, client: Client) -> Result<(Ar
 /// # }
 /// ```
 pub fn parse_local(contents: &str) -> Result<ArchLinux> {
-    let vals = ArchLinux::from(serde_json::from_str::<Root>(contents)?);
-    Ok(vals)
+    Ok(parse_raw(contents)?.sort_by_country().into_archlinux())
+}
+
+/// Deserialize mirrorlist JSON without sorting or converting its entries.
+pub fn parse_raw(contents: &str) -> Result<RawMirrorList> {
+    Ok(serde_json::from_str(contents)?)
 }
 
 /// Gets a client that can be used to rate mirrors
@@ -155,7 +160,7 @@ pub fn get_client(with_timeout: Option<u64>) -> Result<Client> {
     Ok(client_builder.build()?)
 }
 
-/// Queries a mirrorlist and calculates how long it took to get a response
+/// Downloads a test file from a mirror and measures its throughput in bytes per second.
 ///
 /// # Parameters
 /// - `url` - The mirrorlist
@@ -168,11 +173,11 @@ pub fn get_client(with_timeout: Option<u64>) -> Result<Client> {
 /// # async fn foo()->Result<(), Box<dyn std::error::Error>>{
 /// # let url = String::default();
 /// # let client = get_client(Some(5))?;
-/// let (duration, url) = rate_mirror(url, client).await?;
+/// let (bytes_per_second, url) = rate_mirror(url, client).await?;
 /// #  Ok(())
 /// # }
 /// ```
-pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Duration, String)>> {
+pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(f64, String)>> {
     async move {
         let uri = format!("{url}{FILE_PATH}");
 
@@ -181,7 +186,13 @@ pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Du
         let response = client.get(&uri).send().await?;
 
         if response.status() == StatusCode::OK {
-            Ok((now.elapsed(), url))
+            let mut response = response;
+            let mut bytes_downloaded = 0_u64;
+            while let Some(chunk) = response.chunk().await? {
+                bytes_downloaded += chunk.len() as u64;
+            }
+            let elapsed_seconds = now.elapsed().as_secs_f64().max(f64::EPSILON);
+            Ok((bytes_downloaded as f64 / elapsed_seconds, url))
         } else if response.status() == StatusCode::MOVED_PERMANENTLY {
             if let Some(new_uri) = response.headers().get(LOCATION) {
                 let new_url = String::from_utf8_lossy(new_uri.as_bytes()).replace(FILE_PATH, "");
@@ -220,7 +231,6 @@ pub fn rate_mirror(url: String, client: Client) -> BoxFuture<'static, Result<(Du
 /// #  Ok(())
 /// # }
 /// ```
-
 #[cfg(feature = "time")]
 #[cfg_attr(docsrs, doc(cfg(feature = "time")))]
 pub async fn get_last_sync(
