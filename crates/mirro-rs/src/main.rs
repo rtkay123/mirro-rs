@@ -10,30 +10,29 @@ use std::sync::{Arc, Mutex};
 
 use tracing::error;
 
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(feature = "toml")]
 use self::config::watch_config;
 
 #[tokio::main]
 async fn main() {
     let args = <cli::ArgConfig as clap::Parser>::parse();
 
-    #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
-    let (config, file) = config::read_config_file(args.general.config.as_ref());
+    #[cfg(feature = "toml")]
+    let config = {
+        let (config, file) = config::read_config_file(args.general.config.as_ref());
 
-    #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
-    if !check_outfile(&args.general) && !check_outfile(&config.general) {
-        exit("outfile");
-    }
+        if !check_outfile(&args.general) && !check_outfile(&config.general) {
+            exit("outfile");
+        }
 
-    #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
-    if !check_outfile(&args.general) {
-        exit("outfile");
-    }
+        if !check_outfile(&args.general) {
+            exit("outfile");
+        }
 
-    #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
-    let config = config::Configuration::from((args, config));
+        config::Configuration::from((args, config))
+    };
 
-    #[cfg(not(any(feature = "json", feature = "toml", feature = "yaml")))]
+    #[cfg(not(feature = "toml"))]
     let config = config::Configuration::from(args);
 
     dbg::log(config.direct);
@@ -45,7 +44,7 @@ async fn main() {
     } else {
         let config = Arc::new(Mutex::new(config));
 
-        #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+        #[cfg(feature = "toml")]
         watch_config(file, Arc::clone(&config));
 
         let _ = tui::start(config).await;
@@ -68,6 +67,7 @@ pub fn exit(value: &str) -> ! {
     err.exit();
 }
 
+#[cfg(feature = "toml")]
 fn check_outfile(config: &cli::Args) -> bool {
     if let Some(ref outfile) = config.outfile {
         if outfile.to_string_lossy().ends_with('/') || outfile.to_string_lossy().is_empty() {
