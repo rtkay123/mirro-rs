@@ -1,20 +1,20 @@
 use std::{
-    sync::{atomic::AtomicBool, mpsc::Receiver, Arc},
+    sync::{Arc, atomic::AtomicBool, mpsc::Receiver},
     time::Duration,
 };
 
 use archlinux::{
-    chrono::{DateTime, Local},
     Mirror,
+    chrono::{DateTime, Local},
 };
 
 use itertools::Itertools;
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table},
-    Frame,
 };
 use tracing::debug;
 use tui_logger::TuiLoggerWidget;
@@ -32,10 +32,11 @@ pub fn ui(
     popup: &PopUpState,
     exporting: Arc<AtomicBool>,
     percentage: &Receiver<f32>,
+    export_progress: &mut f32,
 ) {
     const MIN_WIDTH: u16 = 80;
     const MIN_HEIGHT: u16 = 27;
-    let area = f.size();
+    let area = f.area();
     if check_size(&area, MIN_WIDTH, MIN_HEIGHT) {
         let region = Layout::default()
             .direction(Direction::Vertical)
@@ -115,12 +116,12 @@ pub fn ui(
             match app.show_input {
                 true => {
                     f.render_widget(draw_filter(app), chunks[1]);
-                    f.set_cursor(
+                    f.set_cursor_position((
                         // Put cursor past the end of the input text
                         chunks[1].x + app.input_cursor_position as u16 + 1,
                         // Move one line down, from the border to the input line
                         chunks[1].y + 1,
-                    )
+                    ))
                 }
                 false => f.render_widget(draw_logs(), chunks[1]),
             };
@@ -152,14 +153,16 @@ pub fn ui(
             f.render_widget(Clear, area);
             if exporting.load(std::sync::atomic::Ordering::Relaxed) && rate_enabled {
                 while let Ok(pos) = percentage.try_recv() {
-                    debug!("exporting mirrors: progress {pos:.2}%");
-                    let gauge = Gauge::default()
-                        .gauge_style(Style::default().fg(Color::Blue).bg(Color::Black))
-                        .block(create_block("Exporting mirrors"))
-                        .percent(pos as u16);
-                    f.render_widget(gauge, area);
+                    *export_progress = pos;
                 }
+                debug!("exporting mirrors: progress {export_progress:.2}%");
+                let gauge = Gauge::default()
+                    .gauge_style(Style::default().fg(Color::Blue).bg(Color::Black))
+                    .block(create_block("Exporting mirrors (Enter/Esc to dismiss)"))
+                    .percent((*export_progress).clamp(0.0, 100.0) as u16);
+                f.render_widget(gauge, area);
             } else {
+                *export_progress = 0.0;
                 f.render_widget(p, area);
             }
         }
@@ -229,7 +232,7 @@ fn draw_table(app: &mut App, f: &mut Frame, region: Rect) {
     f.render_widget(t, region);
 }
 
-fn draw_help(actions: &Actions) -> Table {
+fn draw_help(actions: &Actions) -> Table<'_> {
     let key_style = Style::default().fg(Color::LightCyan);
     let help_style = Style::default().fg(Color::Gray);
 
@@ -308,7 +311,7 @@ fn draw_logs<'a>() -> TuiLoggerWidget<'a> {
         .block(create_block("Logs"))
 }
 
-fn draw_filter(app: &App) -> Paragraph {
+fn draw_filter(app: &App) -> Paragraph<'_> {
     Paragraph::new(app.input.as_str()).block(create_block("Filter"))
 }
 
@@ -389,7 +392,7 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
     let mirror_count = app.selected_mirrors.len();
     let config = app.configuration.lock().unwrap();
 
-    let t = Table::new(
+    Table::new(
         items,
         [
             Constraint::Percentage(16),
@@ -418,9 +421,7 @@ fn draw_selection<'a>(app: &App) -> Table<'a> {
             },
             config.outfile.display()
         )
-    }));
-
-    t
+    }))
 }
 
 fn draw_sort<'a>(app: &App) -> Paragraph<'a> {
@@ -495,6 +496,9 @@ fn format_float(str: impl ToString) -> f32 {
 
 pub fn filter_result(app: &App, f: &Mirror) -> bool {
     use crate::config::Configuration;
+    if !f.active {
+        return false;
+    }
     let mut config = app.configuration.lock().unwrap();
 
     let res = |config: &Configuration, f: &Mirror| {
@@ -524,7 +528,7 @@ pub fn filter_result(app: &App, f: &Mirror) -> bool {
             if !config.filters.contains(&Protocol::InSync) && app.show_insync {
                 config.filters.push(Protocol::InSync);
             }
-            duration.num_hours() <= config.age.into()
+            duration <= archlinux::chrono::Duration::hours(config.age.into())
                 && config.filters.contains(&Protocol::from(f.protocol))
                 && res(&config, f)
         } else {

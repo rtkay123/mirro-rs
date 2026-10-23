@@ -1,13 +1,13 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 use archlinux::{
-    chrono::{DateTime, Utc},
     ArchLinux, Client, Country,
+    chrono::{DateTime, Utc},
 };
 
 use std::{
     path::PathBuf,
-    sync::{atomic::AtomicBool, Arc},
+    sync::{Arc, atomic::AtomicBool},
     time::SystemTime,
 };
 
@@ -193,7 +193,6 @@ impl IoAsyncHandler {
         max_concurrent_ratings: usize,
     ) -> tokio::task::JoinHandle<()> {
         let mut mirrors = Vec::with_capacity(selected_mirrors.len());
-
         let mut set = tokio::task::JoinSet::new();
         let len = selected_mirrors.len();
         let fallback_urls = selected_mirrors.clone();
@@ -210,8 +209,8 @@ impl IoAsyncHandler {
 
             while let Some(res) = set.join_next().await {
                 match res {
-                    Ok(Ok((duration, url))) => {
-                        mirrors.push((duration, url));
+                    Ok(Ok((bytes_per_second, url))) => {
+                        mirrors.push((bytes_per_second, url));
                     }
                     Ok(Err(cause)) => match cause {
                         archlinux::Error::Connection(e) => {
@@ -226,8 +225,8 @@ impl IoAsyncHandler {
                             status_code,
                         } => {
                             error!(
-                                    "could not locate {qualified_url} from {url}, reason=> {status_code}",
-                                );
+                                "could not locate {qualified_url} from {url}, reason=> {status_code}",
+                            );
                         }
                         archlinux::Error::Request(e) => {
                             error!("{e}");
@@ -251,7 +250,7 @@ impl IoAsyncHandler {
 
             let results = {
                 if !mirrors.is_empty() {
-                    mirrors.sort_by(|(duration_a, _), (duration_b, _)| duration_a.cmp(duration_b));
+                    mirrors.sort_by(|(speed_a, _), (speed_b, _)| speed_b.total_cmp(speed_a));
 
                     mirrors.iter().map(|(_, url)| url.to_owned()).collect_vec()
                 } else {
@@ -296,7 +295,7 @@ impl IoAsyncHandler {
                 if let Some(popup) = popup {
                     let mut state = popup.lock().await;
                     state.popup_text = format!(
-                        "Your mirrorlist has been successfully exported to: {}",
+                        "Export complete: {} (Enter/Esc to dismiss)",
                         outfile.display()
                     );
                 }
@@ -410,21 +409,14 @@ async fn get_new_mirrors(
     config: Arc<std::sync::Mutex<Configuration>>,
     client: Client,
 ) -> Result<()> {
-    let url = Arc::new(Mutex::new(String::default()));
-    let inner = Arc::clone(&url);
-    {
-        let mut val = inner.lock().await;
-        let source = config.lock().unwrap();
-        *val = source.url.clone();
-    };
-    let strs = url.lock().await;
+    let url = config.lock().unwrap().url.clone();
 
-    match archlinux::get_mirrors_with_client(&strs, client).await {
+    match archlinux::get_mirrors_with_client(&url, client).await {
         Ok((mirrors, str_value)) => {
-            if let Some(cache) = cache_file {
-                if let Err(e) = tokio::fs::write(cache, str_value).await {
-                    error!("{e}");
-                }
+            if let Some(cache) = cache_file
+                && let Err(e) = tokio::fs::write(cache, str_value).await
+            {
+                error!("{e}");
             }
 
             show_stats(&mirrors.countries, false);

@@ -12,7 +12,9 @@ pub enum Error {
     #[error("could not parse response")]
     Parse(#[from] serde_json::Error),
     /// The mirror could not be rated
-    #[error("could not find file (expected {qualified_url:?}, from {url:?}), server returned {status_code:?}")]
+    #[error(
+        "could not find file (expected {qualified_url:?}, from {url:?}), server returned {status_code:?}"
+    )]
     Rate {
         /// The URL including the filepath that was sent in the request
         qualified_url: String,

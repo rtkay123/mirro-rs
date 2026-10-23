@@ -31,11 +31,11 @@ pub fn log(skip_tui: bool) {
         (Ok(layer), false) => {
             registry
                 .with(layer)
-                .with(tui_logger::tracing_subscriber_layer())
+                .with(tui_logger::TuiTracingSubscriberLayer)
                 .init();
         }
         (Err(e), false) => {
-            registry.with(tui_logger::tracing_subscriber_layer()).init();
+            registry.with(tui_logger::TuiTracingSubscriberLayer).init();
             err_fn(e);
         }
     }
@@ -44,7 +44,7 @@ pub fn log(skip_tui: bool) {
     if skip_tui {
         registry.with(tracing_subscriber::fmt::layer()).init();
     } else {
-        registry.with(tui_logger::tracing_subscriber_layer()).init();
+        registry.with(tui_logger::TuiTracingSubscriberLayer).init();
     }
 
     let pkg_ver = env!("CARGO_PKG_VERSION");

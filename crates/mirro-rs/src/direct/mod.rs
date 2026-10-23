@@ -2,7 +2,7 @@ use anyhow::{Context, Result, bail};
 use archlinux::{
     ArchLinux, Mirror,
     chrono::{DateTime, Local},
-    get_client, ArchLinux, Mirror,
+    get_client,
 };
 use itertools::Itertools;
 use tracing::error;
@@ -110,7 +110,7 @@ async fn get_new_mirrors(
             if let Some(cache) = cache_file
                 && let Err(e) = tokio::fs::write(cache, str_value).await
             {
-                    error!("{e}");
+                error!("{e}");
             }
             Ok(resp)
         }
@@ -144,16 +144,13 @@ pub fn filter_result(f: &Mirror, config: &Configuration) -> bool {
             let now = Local::now();
             let mirror_sync: DateTime<Local> = DateTime::from(mirror_sync);
             let duration = now - mirror_sync;
-            if !config.filters.contains(&Protocol::InSync) {
-                config.filters.push(Protocol::InSync);
-            }
-            duration.num_hours() <= config.age.into()
+            duration <= archlinux::chrono::Duration::hours(config.age.into())
                 && config.filters.contains(&Protocol::from(f.protocol))
-                && res(&config, f)
+                && completion_ok
         } else {
             false
         }
     } else {
-        config.filters.contains(&Protocol::from(f.protocol)) && res(&config, f)
+        config.filters.contains(&Protocol::from(f.protocol)) && completion_ok
     }
 }
