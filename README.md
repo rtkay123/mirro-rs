@@ -2,7 +2,7 @@
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/rtkay123/mirro-rs/ci.yml?label=build">
   <img alt="Crates.io" src="https://img.shields.io/crates/l/mirro-rs">
   <img alt="Crates.io" src="https://img.shields.io/crates/v/mirro-rs">
-  <img alt="msrv" src="https://img.shields.io/badge/msrv-1.74.0-blue"/>
+  <img alt="msrv" src="https://img.shields.io/badge/msrv-1.99.1-blue"/>
 </div>
 <h3 align="center">mirro-rs</h3>
 <p align="center">
@@ -39,7 +39,7 @@ A mirrorlist manager for Arch Linux systems
 
 ### Installation
 
-Install from the Arch Linux official repository:
+Install from the Arch Linux repository:
 
 ```sh
 pacman -S mirro-rs
@@ -115,18 +115,6 @@ For `toml` support:
 
 ```sh
 cargo build --release --features toml
-```
-
-For `json` support:
-
-```sh
-cargo build --release --features json
-```
-
-Likewise, for `yaml` support:
-
-```sh
-cargo build --release --features yaml
 ```
 
 > **Note**
