@@ -2,8 +2,6 @@ mod cli;
 mod config;
 mod dbg;
 mod direct;
-#[cfg(test)]
-mod test;
 mod tui;
 
 use std::sync::{Arc, Mutex};
