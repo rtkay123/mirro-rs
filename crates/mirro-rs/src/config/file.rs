@@ -45,7 +45,7 @@ pub fn read_config_file(
         Some(file) => check_file(file.as_ref(), None),
         None => dirs::config_dir().and_then(|dir| get_config(&dir)),
     };
-    let config_path = config_file.map(|(_, path)| path).flatten();
+    let config_path = config_file.and_then(|(_, path)| path);
     let mut figment = Figment::from(Serialized::defaults(ArgConfig::default()));
     if let Some(path) = config_path.as_ref() {
         figment = figment.merge(Toml::file(path));

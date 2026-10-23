@@ -182,6 +182,7 @@ impl IoAsyncHandler {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn rate_mirrors(
         selected_mirrors: Vec<String>,
         popup: Option<Arc<Mutex<PopUpState>>>,
