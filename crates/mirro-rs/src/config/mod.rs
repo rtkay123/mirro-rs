@@ -1,13 +1,13 @@
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(feature = "toml")]
 mod file;
 
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(feature = "toml")]
 mod watch;
 
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(feature = "toml")]
 pub use watch::watch_config;
 
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(feature = "toml")]
 pub use file::read_config_file;
 
 use std::path::PathBuf;
@@ -90,7 +90,7 @@ impl Configuration {
     }
 }
 
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(feature = "toml")]
 fn get_bools(args: &cli::Filters, config: &cli::Filters) -> (bool, bool, bool) {
     let ipv4 = if !args.ipv4 && config.ipv4 {
         true
@@ -113,7 +113,7 @@ fn get_bools(args: &cli::Filters, config: &cli::Filters) -> (bool, bool, bool) {
     (ipv4, ipv6, isos)
 }
 
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(feature = "toml")]
 impl From<(ArgConfig, ArgConfig)> for Configuration {
     fn from((mut args, mut config): (ArgConfig, ArgConfig)) -> Self {
         let (ipv4, isos, ipv6) = get_bools(&args.filters, &config.filters);
@@ -190,7 +190,7 @@ impl From<(ArgConfig, ArgConfig)> for Configuration {
     }
 }
 
-#[cfg(any(test, not(any(feature = "json", feature = "toml", feature = "yaml"))))]
+#[cfg(any(test, not(feature = "toml")))]
 impl From<ArgConfig> for Configuration {
     fn from(args: ArgConfig) -> Self {
         let outfile = args

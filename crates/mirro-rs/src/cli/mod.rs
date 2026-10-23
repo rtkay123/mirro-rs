@@ -54,7 +54,7 @@ pub struct Args {
     /// Specify alternate configuration file
     #[arg(long)]
     #[serde(skip)]
-    #[cfg(any(feature = "toml", feature = "yaml", feature = "json"))]
+    #[cfg(feature = "toml")]
     pub config: Option<PathBuf>,
 
     /// Sort mirrorlists by download speed when exporting

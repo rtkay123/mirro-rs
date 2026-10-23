@@ -7,15 +7,12 @@ description = "An ArchLinux mirrorlist manager with a TUI"
 authors = ["rtkay123 <dev@kanjala.com>"]
 keywords = ["http", "tui", "linux"]
 categories = ["command-line-interface", "command-line-utilities"]
-repository = "https://github.com/rtkay123/mirro-rs"
-homepage = "https://github.com/rtkay123/mirro-rs"
-documentation = "https://github.com/rtkay123/mirro-rs"
+repository.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ahash = "0.8.11" # https://github.com/tkaitchuck/aHash/issues/200
-anyhow = "1.0.82"
+anyhow = "1.0.104"
 cfg-if = { version = "1.0.0", optional = true }
 clap = { version = "4.5.4", features = ["derive"] }
 crossterm = "0.28.0"
@@ -24,10 +21,8 @@ itertools.workspace = true
 archlinux = { package = "mirrors-arch", version = "0.1.3", path = "../archlinux", features = ["time"] }
 notify = { version = "7.0.0", optional = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true, optional = true }
-serde_yaml = { version = "0.9.34", optional = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "fs"] }
-toml = { version = "0.8.12", optional = true }
+toml = { workspace = true, optional = true }
 tui-logger = { version = "0.13.0", features = ["crossterm", "tracing-support"], default-features = false }
 unicode-width = "0.1.12"
 ratatui = { version = "0.28.0", features = ["crossterm"], default-features = false }
@@ -39,12 +34,11 @@ tracing-journald = "0.3.0"
 
 [features]
 default = []
-json = ["dep:serde_json", "dep:notify", "dep:cfg-if"]
-yaml = ["dep:serde_yaml", "dep:notify", "dep:cfg-if"]
 toml = ["dep:toml", "dep:notify", "dep:cfg-if"]
+tui = []
 
 [dev-dependencies]
-toml = "0.8.12"
+toml.workspace = true
 
 [build-dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
