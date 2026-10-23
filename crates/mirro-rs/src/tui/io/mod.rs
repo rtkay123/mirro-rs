@@ -1,4 +1,4 @@
-use std::sync::{atomic::AtomicBool, mpsc::Sender, Arc};
+use std::sync::{Arc, atomic::AtomicBool, mpsc::Sender};
 
 pub mod handler;
 

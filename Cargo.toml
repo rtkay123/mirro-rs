@@ -11,6 +11,7 @@ toml = "1.1.8"
 
 [workspace.package]
 repository = "https://github.com/rtkay123/mirro-rs"
+edition = "2024"
 
 [profile.release]
 panic = "abort"
