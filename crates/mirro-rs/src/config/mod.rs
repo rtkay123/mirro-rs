@@ -8,7 +8,9 @@ mod watch;
 pub use watch::watch_config;
 
 #[cfg(feature = "toml")]
-pub use file::read_config_file;
+pub use file::{empty_cli_config, read_config_file};
+#[cfg(feature = "toml")]
+pub use file::generate_config_file;
 
 use std::path::PathBuf;
 
@@ -24,6 +26,7 @@ pub struct Configuration {
     pub export: u16,
     pub filters: Vec<Protocol>,
     pub view: ViewSort,
+    #[allow(dead_code)]
     pub sort: ExportSort,
     pub country: Vec<String>,
     pub ttl: u16,
@@ -31,6 +34,7 @@ pub struct Configuration {
     pub completion_percent: u8,
     pub age: u16,
     pub rate: bool,
+    pub max_concurrent_ratings: usize,
     pub connection_timeout: Option<u64>,
     pub include: Option<Vec<String>>,
     pub direct: bool,
@@ -53,6 +57,7 @@ impl Configuration {
         completion_percent: u8,
         age: u16,
         rate: bool,
+        max_concurrent_ratings: usize,
         connection_timeout: Option<u64>,
         include: Option<Vec<String>>,
         direct: bool,
@@ -83,6 +88,7 @@ impl Configuration {
             completion_percent,
             age,
             rate,
+            max_concurrent_ratings,
             connection_timeout,
             include,
             direct,
@@ -90,107 +96,6 @@ impl Configuration {
     }
 }
 
-#[cfg(feature = "toml")]
-fn get_bools(args: &cli::Filters, config: &cli::Filters) -> (bool, bool, bool) {
-    let ipv4 = if !args.ipv4 && config.ipv4 {
-        true
-    } else {
-        args.ipv4
-    };
-
-    let ipv6 = if !args.ipv6 && config.ipv6 {
-        true
-    } else {
-        args.ipv6
-    };
-
-    let isos = if !args.isos && config.isos {
-        true
-    } else {
-        args.isos
-    };
-
-    (ipv4, ipv6, isos)
-}
-
-#[cfg(feature = "toml")]
-impl From<(ArgConfig, ArgConfig)> for Configuration {
-    fn from((mut args, mut config): (ArgConfig, ArgConfig)) -> Self {
-        let (ipv4, isos, ipv6) = get_bools(&args.filters, &config.filters);
-        let outfile = args
-            .general
-            .outfile
-            .unwrap_or_else(|| config.general.outfile.unwrap());
-        let export = args
-            .general
-            .export
-            .unwrap_or_else(|| config.general.export.unwrap());
-        let filters = args
-            .filters
-            .protocols
-            .unwrap_or_else(|| config.filters.protocols.unwrap());
-        let view = args
-            .general
-            .view
-            .unwrap_or_else(|| config.general.view.unwrap());
-        let sort = args
-            .general
-            .sort
-            .unwrap_or_else(|| config.general.sort.unwrap());
-        let countries = args
-            .filters
-            .country
-            .unwrap_or_else(|| config.filters.country.unwrap());
-        let ttl = args
-            .general
-            .ttl
-            .unwrap_or_else(|| config.general.ttl.unwrap());
-        let url = args
-            .general
-            .url
-            .unwrap_or_else(|| config.general.url.unwrap());
-
-        let completion = args
-            .filters
-            .completion_percent
-            .unwrap_or_else(|| config.filters.completion_percent.unwrap());
-
-        let age = args
-            .filters
-            .age
-            .unwrap_or_else(|| config.filters.age.unwrap_or_default());
-
-        let rate = if !args.general.rate && config.general.rate {
-            true
-        } else {
-            args.general.rate
-        };
-
-        let timoeut = if args.general.timeout.is_none() && config.general.timeout.is_some() {
-            config.general.timeout
-        } else {
-            args.general.timeout
-        };
-
-        let include = if args.general.include.is_none() && config.general.include.is_some() {
-            std::mem::take(&mut config.general.include)
-        } else {
-            std::mem::take(&mut args.general.include)
-        };
-        let direct = if !args.general.direct && config.general.direct {
-            true
-        } else {
-            args.general.direct
-        };
-
-        Self::new(
-            outfile, export, filters, view, sort, countries, ttl, url, ipv4, isos, ipv6,
-            completion, age, rate, timoeut, include, direct,
-        )
-    }
-}
-
-#[cfg(any(test, not(feature = "toml")))]
 impl From<ArgConfig> for Configuration {
     fn from(args: ArgConfig) -> Self {
         let outfile = args
@@ -216,6 +121,10 @@ impl From<ArgConfig> for Configuration {
 
         let age = args.filters.age.unwrap_or(0);
         let rate = args.general.rate;
+        let max_concurrent_ratings = args
+            .general
+            .max_concurrent_ratings
+            .unwrap_or(cli::DEFAULT_MAX_CONCURRENT_RATINGS);
         let timeout = args.general.timeout;
         let include = args.general.include;
 
@@ -234,6 +143,7 @@ impl From<ArgConfig> for Configuration {
             completion,
             age,
             rate,
+            max_concurrent_ratings,
             timeout,
             include,
             args.general.direct,
