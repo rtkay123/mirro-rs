@@ -83,12 +83,12 @@ jobs:
       - name: cargo llvm-cov
         run: cargo llvm-cov nextest --profile ci --workspace --locked --all-features --lcov --output-path lcov.info -- --include-ignored
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: ${{ github.repository }}
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         if: ${{ !cancelled() }}
         with:
           fail_ci_if_error: true
