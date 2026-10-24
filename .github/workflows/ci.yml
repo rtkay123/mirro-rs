@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     name: ubuntu / stable / check
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo generate-lockfile
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     name: ubuntu / stable / features
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - name: Install stable
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     name: nightly / doc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - name: Install nightly
@@ -63,7 +63,7 @@ jobs:
         msrv: ["1.99.1"] # clap_mangen
     name: ubuntu / ${{ matrix.msrv }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - name: Install ${{ matrix.msrv }}
