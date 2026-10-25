@@ -7,63 +7,22 @@
   "rebaseWhen": "conflicted",
   "packageRules": [
     {
-      "matchPackagePatterns": [
-        "clap"
+      "matchManagers": [
+        "github-actions"
       ],
-      "groupName": "clap"
+      "automerge": false
     },
     {
-      "matchPackagePatterns": [
-        "tracing"
-      ],
-      "groupName": "tracing",
-      "automerge": true
-    },
-    {
-      "matchPackagePatterns": [
-        "anyhow",
-        "thiserror"
-      ],
-      "automerge": true,
-      "groupName": "error-handling"
-    },
-    {
-      "groupName": "tokio",
-      "automerge": true,
-      "matchPackagePatterns": [
-        "tokio"
-      ],
-      "matchCurrentVersion": "!/^0/",
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ]
-    },
-    {
-      "groupName": "tui",
-      "matchPackagePatterns": [
+      "matchPackageNames": [
         "ratatui",
         "tui-logger"
-      ]
+      ],
+      "groupName": "tui"
     },
     {
-      "groupName": "serde",
-      "automerge": true,
-      "matchPackagePatterns": [
-        "^serde"
+      "matchPackageNames": [
+        "*"
       ],
-      "matchCurrentVersion": "!/^0/",
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ]
-    },
-    {
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "matchCurrentVersion": "!/^0/",
       "automerge": true
     }
   ]
