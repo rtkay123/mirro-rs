@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended"
   ],
+  "schedule": ["* * * * 5,6"],
   "semanticCommits": "enabled",
   "rebaseWhen": "conflicted",
   "packageRules": [
